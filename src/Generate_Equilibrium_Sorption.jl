@@ -173,7 +173,7 @@ function Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, mate
     print("!!!!!!!!!!!!!!!!!!")
     #Adsorbtion:   Equilibrium with inlet T, P, and alpha
     n_CO2 = [Henry_CO2[1] * Ps[1] * α] #[mmol/kg]
-    n_N2 = [Henry_N2 * Ps[1] * (1-α)] #[mmol/kg]
+    n_N2 = [Henry_N2[1] * Ps[1] * (1-α)] #[mmol/kg]
     d_CO2 = [NaN] #[mmol/kg]
     d_N2 = [NaN] #[mmol/kg]
     αs = [α]
@@ -182,22 +182,23 @@ function Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, mate
     for (β, P, henry_co2, henry_n2) in zip(βs[2:end], Ps[2:end], Henry_CO2[2:end], Henry_N2[2:end])
 
         A = henry_n2 * P - henry_co2 * P
-        print("\n n_CO2[end]", typeof(n_CO2[end]))
-        print("\n henry_co2", typeof(henry_co2))
-        print("\n P", typeof(P))
-        print("\n test", typeof(henry_co2 * P))
-        B = n_CO2[end] .+ n_N2[end] .+ henry_co2 * P .- henry_n2 * P
-        print("\n B", typeof(B))
+
+        B = n_CO2[end] + n_N2[end] + henry_co2 * P - henry_n2 * P
+
         C = -1 * n_CO2[end]
 
         x1 = (-1 .* B + sqrt(B.^2 .- 4 .* A .* C))./(2 .* A)
         x2 = (-1 .* B - sqrt(B.^2 .- 4 .* A .* C))./(2 .* A)
         xs = [x1, x2]
-        print("\n x1", x1)
-        diff = (xs .- αs[end])
-        x = xs[argmin.(abs.(xs .- αs[end]))]
 
+        diff = (xs .- αs[end])
+        x = xs[argmin(abs.(xs .- αs[end]))]
+    
         n_CO2_i = henry_co2 * P * x
+        @show henry_n2
+        @show P
+        @show x
+        @show (1-x)
         n_N2_i = henry_n2 * P * (1-x)
         d_CO2_i = n_CO2[end] - n_CO2_i
         d_N2_i = n_N2[end] - n_N2_i
