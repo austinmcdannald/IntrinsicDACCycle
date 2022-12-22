@@ -80,8 +80,10 @@ function Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
     #Adsorbtion:   Equilibrium with inlet T, P, and alpha
     #Generate an isotherm
     #Extrapolate the CO2 isotherm to the current β
-    Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs[1], Kh_CO2, material) #[mmol/(kg Pa)]
-    PHenry_CO2 =  reshape(Henry_CO2 .* Pressures,:) #[mmol/kg]
+    #convert to [μmol/(kg Pa)] for numerical stability
+    Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs[1], Kh_CO2, material) .* 1e6 #[nmol/(kg Pa)]
+    print("Henry Constant = ", Henry_CO2, "[nmol/(kg Pa)]")
+    PHenry_CO2 =  reshape(Henry_CO2 .* Pressures,:) #[nmol/kg]
     CO2_df = pd.DataFrame( Dict( "P"=> Pressures,
                                  "loading" => PHenry_CO2))
     isotherm_CO2 = pyiast.ModelIsotherm(CO2_df,
@@ -90,8 +92,8 @@ function Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
                                         model = "Henry")
         
     #Extrapolate the N2 isotherm to the current β
-    Henry_N2, Henry_N2_err = Kh_extrapolate(βs[1], Kh_N2, material) #[mmol/(kg Pa)]
-    PHenry_N2 =  reshape(Henry_N2 .* Pressures,:) #[mmol/Pa]
+    Henry_N2, Henry_N2_err = Kh_extrapolate(βs[1], Kh_N2, material) .* 1e6 #[nmol/(kg Pa)]
+    PHenry_N2 =  reshape(Henry_N2 .* Pressures,:) #[nmol/Pa]
     N2_df = pd.DataFrame( Dict( "P"=> Pressures,
                                  "loading" => PHenry_N2))
     isotherm_N2 = pyiast.ModelIsotherm(N2_df,
@@ -112,8 +114,8 @@ function Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
     #Desorption: In equilibrium with the outlet
     for (i, (β, P)) in enumerate(zip(βs[2:end], Ps[2:end]))
         #Extrapolate the CO2 isotherm to the current β
-        Henry_CO2, Henry_CO2_err = Kh_extrapolate(β, Kh_CO2, material) #[mmol/(kg Pa)]
-        PHenry_CO2 =  reshape(Henry_CO2 .* Pressures,:) #[mmol/kg]
+        Henry_CO2, Henry_CO2_err = Kh_extrapolate(β, Kh_CO2, material) .* 1e6 #[nmol/(kg Pa)]
+        PHenry_CO2 =  reshape(Henry_CO2 .* Pressures,:) #[nmol/kg]
         CO2_df = pd.DataFrame( Dict( "P"=> Pressures,
                                      "loading" => PHenry_CO2))
         isotherm_CO2 = pyiast.ModelIsotherm(CO2_df,
@@ -122,8 +124,8 @@ function Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
                                             model = "Henry")
         
         #Extrapolate the N2 isotherm to the current β
-        Henry_N2, Henry_N2_err = Kh_extrapolate(β, Kh_N2, material) #[mmol/(kg Pa)]
-        PHenry_N2 =  reshape(Henry_N2 .* Pressures,:) #[mmol/kg]
+        Henry_N2, Henry_N2_err = Kh_extrapolate(β, Kh_N2, material) .* 1e6 #[nmol/(kg Pa)]
+        PHenry_N2 =  reshape(Henry_N2 .* Pressures,:) #[nmol/kg]
         N2_df = pd.DataFrame( Dict( "P"=> Pressures,
                                      "loading" => PHenry_N2))
         isotherm_N2 = pyiast.ModelIsotherm(N2_df,
@@ -145,6 +147,73 @@ function Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
         append!(d_N2, [d_N2_i]) #[mmol/kg]
         append!(αs, [alpha_i])
     end
-    
+    n_CO2 = n_CO2 .* 1e-6 #[mmol/kg]
+    n_N2 = n_N2 .* 1e-6 #[mmol/kg]
+    d_CO2 = d_CO2 .* 1e-6 #[mmol/kg]
+    d_N2 = d_N2 .* 1e-6 #[mmol/kg]
+
     return n_CO2, n_N2, d_CO2, d_N2, αs
 end
+
+"""Function to calculate the equlibrium absolute adsorption, 
+while desorbing from the initial conditions along the temperature and total pressure path."""
+function Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
+    #Where T and P are the temperature [K] and total Pressure [Pa] steps 
+    #alpha is the inlet CO2 concentration
+    #Kh_N2, Kh_CO2 are the reslults of the Henry constant calculations {dict}
+    #material is the dictionary of the material properties
+
+    βs = T_to_β.(Ts)
+
+    #Extrapolate the CO2 isotherm to the βs
+    Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO2, material) #[mmol/(kg Pa)]
+
+    #Extrapolate the N2 isotherm to the βs
+    Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N2, material)  #[mmol/(kg Pa)]
+    print("!!!!!!!!!!!!!!!!!!")
+    #Adsorbtion:   Equilibrium with inlet T, P, and alpha
+    n_CO2 = [Henry_CO2[1] * Ps[1] * α] #[mmol/kg]
+    n_N2 = [Henry_N2 * Ps[1] * (1-α)] #[mmol/kg]
+    d_CO2 = [NaN] #[mmol/kg]
+    d_N2 = [NaN] #[mmol/kg]
+    αs = [α]
+
+    #Desorption: In equilibrium with the outlet
+    for (β, P, henry_co2, henry_n2) in zip(βs[2:end], Ps[2:end], Henry_CO2[2:end], Henry_N2[2:end])
+
+        A = henry_n2 * P - henry_co2 * P
+        print("\n n_CO2[end]", typeof(n_CO2[end]))
+        print("\n henry_co2", typeof(henry_co2))
+        print("\n P", typeof(P))
+        print("\n test", typeof(henry_co2 * P))
+        B = n_CO2[end] .+ n_N2[end] .+ henry_co2 * P .- henry_n2 * P
+        print("\n B", typeof(B))
+        C = -1 * n_CO2[end]
+
+        x1 = (-1 .* B + sqrt(B.^2 .- 4 .* A .* C))./(2 .* A)
+        x2 = (-1 .* B - sqrt(B.^2 .- 4 .* A .* C))./(2 .* A)
+        xs = [x1, x2]
+        print("\n x1", x1)
+        diff = (xs .- αs[end])
+        x = xs[argmin.(abs.(xs .- αs[end]))]
+
+        n_CO2_i = henry_co2 * P * x
+        n_N2_i = henry_n2 * P * (1-x)
+        d_CO2_i = n_CO2[end] - n_CO2_i
+        d_N2_i = n_N2[end] - n_N2_i
+
+        append!(n_CO2, [n_CO2_i]) #[mmol/kg]
+        append!(d_CO2, [d_CO2_i]) #[mmol/kg]
+        append!(n_N2, [n_N2_i]) #[mmol/kg]
+        append!(d_N2, [d_N2_i]) #[mmol/kg]
+        append!(αs, [x])
+
+    end
+
+
+    return n_CO2, n_N2, d_CO2, d_N2, αs
+
+    
+    
+end
+

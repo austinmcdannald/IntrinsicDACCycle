@@ -14,14 +14,15 @@ function Intrinisic_refresh(directory, name)
     
     #Define refresh cycle (T, P) path and inlet concentration
     t = range(0, 100, 101) #progression of desorption [fake time units]
-	Ts = 300.0 .+ (0.5 .* t) #Temperature [K] 
+	Ts = 350.0 .+ (1 .* t) #Temperature [K] 
 	Ps = 101325 .+ (0 .* t) #Pressure [Pa] equal to 1 atmosphere of presure
     α = 400/1000000 #400 ppm is the concentration of CO2 in ambient air
-    # α = 0.0001 #400 ppm is the concentration of CO2 in ambient air
+    # α = 0.01 #400 ppm is the concentration of CO2 in ambient air
+    print("alpha = ", α)
     βs = T_to_β.(Ts) #[mol/kJ]
 
     #Generate Equilibrium loadings along the path
-    n_CO2, n_N2, d_CO2, d_N2, αs = Generate_sorption_path(Ts, Ps, α, Kh_CO₂, Kh_N₂, material) #[mmol/kg]
+    n_CO2, n_N2, d_CO2, d_N2, αs = Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO₂, Kh_N₂, material) #[mmol/kg]
     print("______________n_CO2_original___", n_CO2)
     n_CO2 *= 10^-3 #convert to [mol/kg]
     n_N2 *= 10^-3 #convert to [mol/kg]

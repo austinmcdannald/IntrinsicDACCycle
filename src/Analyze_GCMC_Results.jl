@@ -1,4 +1,3 @@
-
 """Function to convert temperature to thermodynamic β."""
 function T_to_β(x)
     #input x in Kelvin
@@ -58,24 +57,22 @@ function Kh_extrapolate(β, Kh_results, material)
     
     
     δᵦ = β .- β₀ #Distance in beta-space [mol/kJ]
-    
 
     Kcoeff = Kh_results["Kcoeff"] #K* coefficients
     power = length(Kcoeff)
     powers = collect(range(0, power-1, power)) #the polynomial degree for each coeff
     reps = length(δᵦ)
     power_reps = ones((reps,1)) .* powers' #Matrix of each degree for each δᵦ
-
-    δᵦᴾ = δᵦ' .^ power_reps #each δᵦ to each power.
-
+    δᵦ_m =  δᵦ .* ones(power)' 
+    # δᵦᴾ = δᵦ' .^ power_reps #each δᵦ to each power.
+    δᵦᴾ = δᵦ_m .^ power_reps #each δᵦ to each power.
     kᵦ = δᵦᴾ .* Kcoeff'
 
     x = sum(kᵦ, dims = 2) #Sum the terms of the polynomial for each δᵦ
     Kh = (β'./ρₛ).*x #Kh [mmol/(kg Pa)] Mulitply by the pre-factor
 
     Covariance = hcat(Kh_results["Kcoeff_covar"]...)
-    
-    Jacobian = (β'./ρₛ).*δᵦᴾ
+    Jacobian = (reshape(β, (1,:))./ ρₛ) * δᵦᴾ
 
     poly_var = Jacobian*Covariance*Jacobian'
     trials = Kh_results["trials"]

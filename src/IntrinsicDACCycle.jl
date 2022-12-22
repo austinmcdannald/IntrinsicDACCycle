@@ -3,6 +3,7 @@ module IntrinsicDACCycle
 using GaussianProcesses
 using Optim
 using JSON
+using LinearAlgebra
 using NaNStatistics
 using LogExpFunctions
 using Roots
