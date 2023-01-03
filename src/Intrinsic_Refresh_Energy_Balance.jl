@@ -17,13 +17,10 @@ function Intrinisic_refresh(directory, name)
 	Ts = 350.0 .+ (1 .* t) #Temperature [K] 
 	Ps = 101325 .+ (0 .* t) #Pressure [Pa] equal to 1 atmosphere of presure
     α = 400/1000000 #400 ppm is the concentration of CO2 in ambient air
-    # α = 0.01 #400 ppm is the concentration of CO2 in ambient air
-    print("alpha = ", α)
     βs = T_to_β.(Ts) #[mol/kJ]
 
     #Generate Equilibrium loadings along the path
     n_CO2, n_N2, d_CO2, d_N2, αs = Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO₂, Kh_N₂, material) #[mmol/kg]
-    print("______________n_CO2_original___", n_CO2)
     n_CO2 *= 10^-3 #convert to [mol/kg]
     n_N2 *= 10^-3 #convert to [mol/kg]
     d_CO2 *= 10^-3 #convert to [mol/kg]
@@ -31,8 +28,12 @@ function Intrinisic_refresh(directory, name)
 
 
     #Generate heat of adsorption along the path
-    q_CO2 = qₐ∞(βs, Kh_CO₂) #kJ/mol of gas
-    q_N2 = qₐ∞(βs, Kh_N₂) #kJ/mol of gas
+    q_CO2, q_CO2_err = qₐ∞(βs, Kh_CO₂) #kJ/mol of gas
+    q_CO2  *= 10^3 #[J/mol]
+    q_CO2_err  *= 10^3 #[J/mol]
+    q_N2, q_N2_err = qₐ∞(βs, Kh_N₂) #kJ/mol of gas
+    q_N2  *= 10^3 #[J/mol]
+    q_N2_err  *= 10^3 #[J/mol]
 
     #Generate specific heat of sorbent along the path
     cv_s, cv_s_errs =  Extrapolate_Cv(directory, name, Ts) #[J/(kg K)]
@@ -43,7 +44,9 @@ function Intrinisic_refresh(directory, name)
     (Q_adsorb, W_adsorb) = intrinsic_refresh_step_1(Ts, 
                                                     n_CO2, n_N2,
                                                     q_CO2, q_N2)
-    E1 = nansum(Q_adsorb, W_adsorb)
+    @show Q_adsorb
+    @show W_adsorb
+    E1 = Q_adsorb + W_adsorb
 
     #Energy balance for step 2
     (Q_CO2, Q_N2, 
@@ -53,7 +56,10 @@ function Intrinisic_refresh(directory, name)
                                                  n_CO2, n_N2, d_CO2, d_N2,
                                                  q_CO2, q_N2,
                                                  cv_s)
-    E2 = nansum(Q_CO2 .+ Q_N2 .+ W_desorb_CO2 .+ W_desorb_N2 .+ E_heat_ads_CO2 .+ E_heat_ads_N2 .+ E_heat_sorb .+ E_P)   
+    E2 = nansum(Q_CO2 .+ Q_N2 
+                .+ W_desorb_CO2 .+ W_desorb_N2 
+                .+ E_heat_ads_CO2 .+ E_heat_ads_N2 
+                .+ E_heat_sorb .+ E_P)   
     #Energy balance for step 3
     E3 = 0
 
@@ -80,14 +86,14 @@ first step of the intrinsic refresh cycle: Adsorption at constat Temperature and
 function intrinsic_refresh_step_1(Ts,
                                   n_CO2, n_N2, 
                                   q_CO2, q_N2)
-    print("______________n_CO2", n_CO2)
-    Δn_CO2 = n_CO2[1] - n_CO2[end]
-    Δn_N2 = n_N2[1] - n_N2[end]
+    Δn_CO2 = n_CO2[1] - n_CO2[end] #[mol/kg_sorb]
+    Δn_N2 = n_N2[1] - n_N2[end] #[mol/kg_sorb]
     #Heat of adsorption:
-    Q_adsorb = Δn_CO2 * q_CO2[1] + Δn_CO2 * q_N2[1]
+    Q_adsorb = Δn_CO2 * q_CO2[1] + Δn_CO2 * q_N2[1] #[J/kg_sorb]
 
     #Work of gas constracting upon adsorption:
     W_adsorb = (-Δn_CO2 - Δn_N2) * R * Ts[1] #[J/kg_sorb] reduced from ΔV*P where ΔV = ΔnRT/P
+    
 
     return Q_adsorb, W_adsorb 
 end
@@ -106,17 +112,18 @@ function intrinsic_refresh_step_2(Ts, Ps,
     #Work of expanding gas durring step 2:
     T_midpoints = 0.5 .* (Ts .+ circshift(Ts, 1))[2:end]
     T_midpoints = append!([NaN], T_midpoints)
+
     W_desorb_CO2 = (d_CO2) .* R .* T_midpoints #J/mol_sorb
     W_desorb_N2 = (d_N2) .* R .* T_midpoints #J/mol_sorb
 
     #Energy needed to heat adsorbed gas:
-    dT = (T .- circshift(T,1))[2:end] #[K]
+    dT = (Ts .- circshift(Ts,1))[2:end] #[K]
 	dT = append!([NaN], dT) #[K]
 
-    n_CO2_mid = 0.5 .* (n_CO2 .+ circshirt(n_CO2, 1))[2:end] #mol/kg
+    n_CO2_mid = 0.5 .* (n_CO2 .+ circshift(n_CO2, 1))[2:end] #mol/kg
     n_CO2_mid = append!([NaN],n_CO2_mid)
     
-    n_N2_mid = 0.5 .* (n_N2 .+ circshirt(n_N2, 1))[2:end] #mol/kg
+    n_N2_mid = 0.5 .* (n_N2 .+ circshift(n_N2, 1))[2:end] #mol/kg
     n_N2_mid = append!([NaN],n_N2_mid)
     
     E_heat_ads_CO2 = (9/2) .* R .* dT .* n_CO2_mid #J/kg_sorb
@@ -127,7 +134,7 @@ function intrinsic_refresh_step_2(Ts, Ps,
 
     #Energy needed to change pressure:
     n_gas_mid = n_CO2_mid .+ n_N2_mid #mol/kg_sorb
-    log_P = log(Ps ./ circshift(Ps,1))[2:end] 
+    log_P = log.(Ps ./ circshift(Ps,1))[2:end] 
     log_P = append!([NaN], log_P)
     E_P = n_gas_mid .* R .* T_midpoints .* log_P #J/kg_sorb
 

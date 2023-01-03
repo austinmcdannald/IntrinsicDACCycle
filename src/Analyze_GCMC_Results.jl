@@ -89,11 +89,11 @@ function qₐ∞(β, Kh_results)
     #Define the factor for the t-distribution for standard deivation
     tvalue = 1.959
     
-    β₀ = Kh_results["beta"]
+    β₀ = Kh_results["beta"] #[mol/kJ]
 
     δᵦ = β .- β₀ #Distance in beta-space
 
-    Kcoeff = Kh_results["Kcoeff"] #K* coefficients
+    Kcoeff = Kh_results["Kcoeff"] #K* coefficients  
     power = length(Kcoeff)
     powers = collect(range(0, power-1, power)) #the polynomial degree for each coeff
     reps = length(δᵦ)
