@@ -67,9 +67,9 @@ function Kh_extrapolate(β, Kh_results, material)
     # δᵦᴾ = δᵦ' .^ power_reps #each δᵦ to each power.
     δᵦᴾ = δᵦ_m .^ power_reps #each δᵦ to each power.
     kᵦ = δᵦᴾ .* Kcoeff'
-
     x = sum(kᵦ, dims = 2) #Sum the terms of the polynomial for each δᵦ
-    Kh = (β'./ρₛ).*x #Kh [mmol/(kg Pa)] Mulitply by the pre-factor
+
+    Kh = (β./ρₛ).*x #Kh [mmol/(kg Pa)] Mulitply by the pre-factor
 
     Covariance = hcat(Kh_results["Kcoeff_covar"]...)
     Jacobian = (reshape(β, (1,:))./ ρₛ) * δᵦᴾ
@@ -85,7 +85,6 @@ end
 and extrapolates to new thermodyanmic β."""
 function qₐ∞(β, Kh_results)
     #Calculate the heat of adsorption at infinate dilution
-    
     #Define the factor for the t-distribution for standard deivation
     tvalue = 1.959
     
@@ -114,7 +113,7 @@ function qₐ∞(β, Kh_results)
     kᵦ_1 = δᵦᴾ_1 .* Kcoeff_1' .* powers_1'		
     numerator = sum(kᵦ_1, dims =2)
 
-    q_ads_∞ = 1 ./β .+ (numerator' ./ denominator')
+    q_ads_∞ = 1 ./β .+ (numerator ./ denominator)
 
     #Uncertainty Propagation:
     #Add a leading zero to the k_beta for df/dKh0

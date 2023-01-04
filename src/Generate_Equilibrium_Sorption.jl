@@ -167,9 +167,9 @@ function Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, mate
 
     #Extrapolate the CO2 isotherm to the βs
     Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO2, material) #[mmol/(kg Pa)]
-
     #Extrapolate the N2 isotherm to the βs
     Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N2, material)  #[mmol/(kg Pa)]
+
     #Adsorbtion:   Equilibrium with inlet T, P, and alpha
     n_CO2 = [Henry_CO2[1] * Ps[1] * α] #[mmol/kg]
     n_N2 = [Henry_N2[1] * Ps[1] * (1-α)] #[mmol/kg]
@@ -189,8 +189,7 @@ function Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, mate
         x1 = (-1 .* B + sqrt(B.^2 .- 4 .* A .* C))./(2 .* A)
         x2 = (-1 .* B - sqrt(B.^2 .- 4 .* A .* C))./(2 .* A)
         xs = [x1, x2]
-
-       
+ 
         x = xs[argmin(abs.(xs .- αs[end]))]
     
         n_CO2_i = henry_co2 * P * x
