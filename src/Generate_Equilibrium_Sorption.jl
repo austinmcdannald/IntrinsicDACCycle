@@ -157,18 +157,11 @@ end
 
 """Function to calculate the equlibrium absolute adsorption, 
 while desorbing from the initial conditions along the temperature and total pressure path."""
-function Analytical_Henry_Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
-    #Where T and P are the temperature [K] and total Pressure [Pa] steps 
+function Analytical_Henry_Generate_sorption_path(βs, Ps, α, Henry_CO2, Henry_N2)
+    #Where β and P are the inverse temperature [mol/kJ] and total Pressure [Pa] steps 
     #alpha is the inlet CO2 concentration
-    #Kh_N2, Kh_CO2 are the reslults of the Henry constant calculations {dict}
+    #Henry_CO2, Henry_CO2 are Henry constants along the path
     #material is the dictionary of the material properties
-
-    βs = T_to_β.(Ts)
-
-    #Extrapolate the CO2 isotherm to the βs
-    Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO2, material) #[mmol/(kg Pa)]
-    #Extrapolate the N2 isotherm to the βs
-    Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N2, material)  #[mmol/(kg Pa)]
 
     #Adsorbtion:   Equilibrium with inlet T, P, and alpha
     n_CO2 = [Henry_CO2[1] * Ps[1] * α] #[mmol/kg]
