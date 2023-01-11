@@ -5,7 +5,9 @@ This function will read in the JSON file for the MOF that contains the Cv predic
     the function will generate a GP and extrapolate the predictions to the temperatures in Temperatures_test.
 """
 function Extrapolate_Cv(directory, name, Temperatures_test)  
+    
     file = directory*"Cv_"*name*"_clean.json"  
+    # file = directory*"Cv_predictions/cv_predictions/"*"Cv_"*name*".json"  
     #Read the Json file
     Cv_dict = JSON.parsefile(file)
     Temperatures = convert(Array{Float64,1},Cv_dict["Temperatures"]) #K
@@ -24,5 +26,7 @@ function Extrapolate_Cv(directory, name, Temperatures_test)
     optimize!(gp; noise=false, method = ConjugateGradient()) #Optimize GP
 
     μ, σ² = predict_f(gp, Temperatures_test, full_cov=true) #Predict GP
-    return μ, σ² #[J/(kg K)]
+    μ = reshape(μ, (:,1))
+    σ = reshape(sqrt.(diag(σ²)), (:,1))
+    return μ, σ #[J/(kg K)]
 end

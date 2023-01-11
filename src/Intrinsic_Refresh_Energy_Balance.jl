@@ -13,22 +13,23 @@ function Intrinisic_refresh(directory, name)
     end
 
     #Start Dictionaries for the results
-    Results_Dict = Dict{String, Any}("Name" => name)
-    Path_Dict = Dict{String, Any}("Path" => "Definition of refresh path and material properties along that path (in per kg of sorbent basis).")
-    E_Balance_Dict = Dict{String, Any}("E_Balance" => "Energy balance along path")
-    Step_1_Dict = Dict{String, Any}("Step_1" => "Adsorption")
-    Step_2_Dict = Dict{String, Any}("Step_2" => "Desorption")
-    Step_3_Dict = Dict{String, Any}("Step_3" => "Waste energy recovery")
+    Results_Dict = sort(Dict{String, Any}("Name" => name))
+    Path_Dict = sort(Dict{String, Any}("Refresh_Path" => "Definition of refresh path and material properties along that path (in per kg of sorbent basis)."))
+    E_Balance_Dict = sort(Dict{String, Any}("E_Balance" => "Energy balance along path"))
+    Step_1_Dict = sort(Dict{String, Any}("Step_1" => "Adsorption"))
+    Step_2_Dict = sort(Dict{String, Any}("Step_2" => "Desorption"))
+    Step_3_Dict = sort(Dict{String, Any}("Step_3" => "Waste energy recovery"))
+    
     #Define refresh cycle (T, P) path and inlet concentration
     t1 = range(0, 100, 101) #progression of desorption [fake time units]
     t2 = range(0, 100, 101) #progression of desorption [fake time units]
-	# T1s = 300.0 .+ (0.5 .* t1) #Temperature [K] 
-    T1s = 310.0 .+ (0 .* t1) #Temperature [K] 
-	# P1s = 101325 .+ (0 .* t1) #Pressure [Pa] equal to 1 atmosphere of presure
-    P1s = 101325 .+ (-101325/200 .* t1) #Pressure [Pa] equal to 1 atmosphere of presure
-    T2s = T1s[end] .+ (0.5 .* t2) #Temperature [K] 
-	# P2s = P1s[end] .+ (-101325/200 .* t2) #Pressure [Pa] equal to 1 atmosphere of presure
-	P2s = P1s[end] .+ (0.0 .* t2) #Pressure [Pa] equal to 1 atmosphere of presure
+	#Isobarically heat 300 K to 350 K
+    T1s = 300.0 .+ (0.5 .* t1) #Temperature [K]  
+	P1s = 101325 .+ (0 .* t1) #Pressure [Pa] equal to 1 atmosphere of presure
+    #Isothermally pull vaccuum from 1 atm to 0.5 atm.
+    T2s = T1s[end] .+ (0.0 .* t2) #Temperature [K] 
+	P2s = P1s[end] .+ (-101325/200 .* t2) #Pressure [Pa] equal to 1 atmosphere of presure
+	#Concatonate the process steps
     Ts = append!(collect(T1s), collect(T2s))
     Ps = append!(collect(P1s), collect(P2s))
     α = 400/1000000 #400 ppm is the concentration of CO2 in ambient air
@@ -44,6 +45,7 @@ function Intrinisic_refresh(directory, name)
     #Extrapolate Henry constants along the path
     #Extrapolate the CO2 isotherm to the βs
     Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO₂, material) #[mmol/(kg Pa)]
+
     #Extrapolate the N2 isotherm to the βs
     Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N₂, material)  #[mmol/(kg Pa)]
 
@@ -160,10 +162,14 @@ function Intrinisic_refresh(directory, name)
     E_Balance_Dict["Step_2"] = Step_2_Dict
     E_Balance_Dict["Step_3"] = Step_3_Dict
 
-    Results_Dict["Path"] = Path_Dict
+    Results_Dict["Refresh_Path"] = Path_Dict
     Results_Dict["E_Balance"] = E_Balance_Dict
 
-    # @show Results_Dict
+    #Write the results to a JSON file
+    results_file = directory*"Intrinsic_cyle_"*name*".json"
+    open(results_file, "w") do f
+        JSON.print(f, Results_Dict, 4)
+    end
 
     return Results_Dict
 end

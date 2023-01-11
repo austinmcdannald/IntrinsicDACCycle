@@ -16,16 +16,23 @@ end
 
 """This function reads in the JSON files for the GCMC results as well as the material discription file."""
 function read_jsons(directory, name)
+    #strip off the "_clean" suffix and copy that name
+    name_parsed = replace(name, "_clean" => "")
+
     material_string = directory*name*"_clean.json"
+    # material_string = directory*"/CSD_FEASST_Materials/Materials/"*name*".json"
     material = JSON.parsefile(material_string)
 
     Kh_N₂string = directory*"results_300_N2_"*name*".json"
+    # Kh_N₂string = directory*"/Results/"*"results_300_N2_"*name*".json"
     Kh_N₂ = JSON.parsefile(Kh_N₂string)
 
     Kh_CO₂string = directory*name*"_clean.results.json"
+    # Kh_CO₂string = directory*"/CSD_FEASST_Materials/Results/"*name_parsed*"_clean.results.json"
 	Kh_CO₂ = JSON.parsefile(Kh_CO₂string)
 
 	One_atm_string = directory*"results_300K_1atmN2_"*name*".json"
+	# One_atm_string = directory*"/Atmosphere_check/"*"results_300K_1atmN2_"*name_parsed*".json"
 	One_atm_N₂ = JSON.parsefile(One_atm_string)
 
     return material, Kh_N₂, Kh_CO₂, One_atm_N₂
@@ -54,8 +61,6 @@ function Kh_extrapolate(β, Kh_results, material)
         print("Extrapolating to", β_to_T.(β))
     end
 
-    
-    
     δᵦ = β .- β₀ #Distance in beta-space [mol/kJ]
 
     Kcoeff = Kh_results["Kcoeff"] #K* coefficients
@@ -72,12 +77,12 @@ function Kh_extrapolate(β, Kh_results, material)
     Kh = (β./ρₛ).*x #Kh [mmol/(kg Pa)] Mulitply by the pre-factor
 
     Covariance = hcat(Kh_results["Kcoeff_covar"]...)
-    Jacobian = (reshape(β, (1,:))./ ρₛ) * δᵦᴾ
-
-    poly_var = Jacobian*Covariance*Jacobian'
-    trials = Kh_results["trials"]
-    Kh_std = sqrt.(poly_var./trials)*tvalue
+    Jacobian = (reshape(β, (:,1))./ ρₛ) .* δᵦᴾ
     
+    poly_var = Jacobian*Covariance*Jacobian' #the whole covariance matrix for the results
+    trials = Kh_results["trials"]
+    Kh_std = reshape(sqrt.(diag(poly_var)./trials)*tvalue, (:,1)) #get the std from the covariance matrix
+
     return Kh, Kh_std # [mmol/(kg Pa)]
 end
 
@@ -127,10 +132,10 @@ function qₐ∞(β, Kh_results)
     Jacobian = (first_term .+ second_term) ./(B.^2)
 
     Covariance = hcat(Kh_results["Kcoeff_covar"]...)
-    q_ads_∞_var = Jacobian*Covariance*Jacobian'
+    q_ads_∞_var = Jacobian*Covariance*Jacobian' #The whole covariance matrix for the results
     trials = Kh_results["trials"]
     
-    q_ads_∞_std = sqrt.(q_ads_∞_var./trials)*tvalue
+    q_ads_∞_std = reshape(sqrt.(diag(q_ads_∞_var)./trials)*tvalue, (:,1)) #get the std from the covariance matrix
     
     return q_ads_∞, q_ads_∞_std #kJ/mol of gas
 end
