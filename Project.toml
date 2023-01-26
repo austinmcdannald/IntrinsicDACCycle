@@ -4,6 +4,8 @@ authors = ["Austin McDannald <austin.mcdannald@nist.gov> and contributors"]
 version = "0.1.0"
 
 [deps]
+Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 GaussianProcesses = "891a1506-143c-57d2-908e-e1f8e92e6de9"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

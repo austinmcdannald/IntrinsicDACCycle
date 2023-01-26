@@ -19,20 +19,20 @@ function read_jsons(directory, name)
     #strip off the "_clean" suffix and copy that name
     name_parsed = replace(name, "_clean" => "")
 
-    material_string = directory*name*"_clean.json"
-    # material_string = directory*"/CSD_FEASST_Materials/Materials/"*name*".json"
+    # material_string = directory*name*"_clean.json"
+    material_string = directory*"/CSD_FEASST_Materials/Materials/"*name*".json"
     material = JSON.parsefile(material_string)
 
-    Kh_N₂string = directory*"results_300_N2_"*name*".json"
-    # Kh_N₂string = directory*"/Results/"*"results_300_N2_"*name*".json"
+    # Kh_N₂string = directory*"results_300_N2_"*name*".json"
+    Kh_N₂string = directory*"/Results/"*"results_300_N2_"*name_parsed*".json"
     Kh_N₂ = JSON.parsefile(Kh_N₂string)
 
-    Kh_CO₂string = directory*name*"_clean.results.json"
-    # Kh_CO₂string = directory*"/CSD_FEASST_Materials/Results/"*name_parsed*"_clean.results.json"
+    # Kh_CO₂string = directory*name*"_clean.results.json"
+    Kh_CO₂string = directory*"/CSD_FEASST_Materials/Results/"*name*".results.json"
 	Kh_CO₂ = JSON.parsefile(Kh_CO₂string)
 
-	One_atm_string = directory*"results_300K_1atmN2_"*name*".json"
-	# One_atm_string = directory*"/Atmosphere_check/"*"results_300K_1atmN2_"*name_parsed*".json"
+	# One_atm_string = directory*"results_300K_1atmN2_"*name*".json"
+	One_atm_string = directory*"/Atmosphere_check/"*"results_300K_1atmN2_"*name_parsed*".json"
 	One_atm_N₂ = JSON.parsefile(One_atm_string)
 
     return material, Kh_N₂, Kh_CO₂, One_atm_N₂

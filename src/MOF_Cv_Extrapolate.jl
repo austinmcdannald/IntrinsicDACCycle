@@ -6,8 +6,8 @@ This function will read in the JSON file for the MOF that contains the Cv predic
 """
 function Extrapolate_Cv(directory, name, Temperatures_test)  
     
-    file = directory*"Cv_"*name*"_clean.json"  
-    # file = directory*"Cv_predictions/cv_predictions/"*"Cv_"*name*".json"  
+    # file = directory*"Cv_"*name*"_clean.json"  
+    file = directory*"/CV_predictions/"*"Cv_"*name*".json"  
     #Read the Json file
     Cv_dict = JSON.parsefile(file)
     Temperatures = convert(Array{Float64,1},Cv_dict["Temperatures"]) #K
