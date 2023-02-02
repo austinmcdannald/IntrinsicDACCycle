@@ -19,20 +19,20 @@ function read_jsons(directory, name)
     #strip off the "_clean" suffix and copy that name
     name_parsed = replace(name, "_clean" => "")
 
-    # material_string = directory*name*"_clean.json"
-    material_string = directory*"/CSD_FEASST_Materials/Materials/"*name*".json"
+    material_string = directory*name*"_clean.json"
+    # material_string = directory*"/CSD_FEASST_Materials/Materials/"*name*".json"
     material = JSON.parsefile(material_string)
 
-    # Kh_N₂string = directory*"results_300_N2_"*name*".json"
-    Kh_N₂string = directory*"/Results/"*"results_300_N2_"*name_parsed*".json"
+    Kh_N₂string = directory*"results_300_N2_"*name*".json"
+    # Kh_N₂string = directory*"/Results/"*"results_300_N2_"*name_parsed*".json"
     Kh_N₂ = JSON.parsefile(Kh_N₂string)
 
-    # Kh_CO₂string = directory*name*"_clean.results.json"
-    Kh_CO₂string = directory*"/CSD_FEASST_Materials/Results/"*name*".results.json"
+    Kh_CO₂string = directory*name*"_clean.results.json"
+    # Kh_CO₂string = directory*"/CSD_FEASST_Materials/Results/"*name*".results.json"
 	Kh_CO₂ = JSON.parsefile(Kh_CO₂string)
 
-	# One_atm_string = directory*"results_300K_1atmN2_"*name*".json"
-	One_atm_string = directory*"/Atmosphere_check/"*"results_300K_1atmN2_"*name_parsed*".json"
+	One_atm_string = directory*"results_300K_1atmN2_"*name*".json"
+	# One_atm_string = directory*"/Atmosphere_check/"*"results_300K_1atmN2_"*name_parsed*".json"
 	One_atm_N₂ = JSON.parsefile(One_atm_string)
 
     return material, Kh_N₂, Kh_CO₂, One_atm_N₂
@@ -114,8 +114,9 @@ function qₐ∞(β, Kh_results)
     powers_1 = powers[2:end]
     power_reps_1 = power_reps[:, 2:end]
     δᵦ_m_1 =  δᵦ .* ones(power-1)'
-    δᵦᴾ_1 = δᵦ_m_1 .^(power_reps_1 .- 1)
-    kᵦ_1 = δᵦᴾ_1 .* Kcoeff_1' .* powers_1'		
+    δᵦᴾ_1 = δᵦ_m_1 .^(power_reps_1 .- 1) 
+    kᵦ_1 = δᵦᴾ_1 .* Kcoeff_1' .* powers_1'
+
     numerator = sum(kᵦ_1, dims =2)
 
     q_ads_∞ = 1 ./β .+ (numerator ./ denominator)
@@ -128,8 +129,19 @@ function qₐ∞(β, Kh_results)
     B = sum(kᵦ, dims = 2)
     
     first_term = power_reps .* B .* δᵦ_m .^(power_reps .-1)
+    # @show first_term
     second_term = A .* δᵦ_m .^(power_reps)
-    Jacobian = (first_term .+ second_term) ./(B.^2)
+    # @show size(second_term)
+    Jacobian = (first_term .- second_term) ./(B.^2)
+    #when δᵦ = 0 use q = 1/β + Kh2/Kh1
+    #^ in which case the Jacobian becomes:
+    Jacobian_0 = zeros(power)
+    Jacobian_0[1] = -Kcoeff[2]/(Kcoeff[1]^2)
+    Jacobian_0[2] = 1/Kcoeff[1]
+    #find indexes where δ_beta == 0
+    mask_δᵦ = findall(x -> x == 0, reshape(δᵦ, (:)))
+    Jacobian[mask_δᵦ, CartesianIndex.(1:power)] .= reshape(Jacobian_0, (1,:)) 
+     
 
     Covariance = hcat(Kh_results["Kcoeff_covar"]...)
     q_ads_∞_var = Jacobian*Covariance*Jacobian' #The whole covariance matrix for the results

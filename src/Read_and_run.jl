@@ -8,19 +8,19 @@
 
 #short_list = list_of_names[1:50]
 
-#@everywhere begin
-    function Intrinisic_refresh_run(Base_directory, name)
-        # directory = "/wrk/asm6/CSD_data/"
-        # directory = "/users/asm6/DAC_data/"
-        # list_of_completed_files = filter(x->occursin(".json", x), readdir(directory*"CSD_FEASST_Materials/Materials/"))
-        list_of_completed_files = filter(x->occursin.(".json", x), readdir(Base_directory*"CSD_FEASST_Materials/Materials/"))
-        list_of_completed_names = replace.(list_of_completed_files, ".json" => "")
+# #@everywhere begin
+#     function Intrinisic_refresh_run(Base_directory, name)
+#         # directory = "/wrk/asm6/CSD_data/"
+#         # directory = "/users/asm6/DAC_data/"
+#         # list_of_completed_files = filter(x->occursin(".json", x), readdir(directory*"CSD_FEASST_Materials/Materials/"))
+#         list_of_completed_files = filter(x->occursin.(".json", x), readdir(Base_directory*"CSD_FEASST_Materials/Materials/"))
+#         list_of_completed_names = replace.(list_of_completed_files, ".json" => "")
     
-        if ~occursin.(list_of_completed_names, name)
-            results = Intrinisic_refresh(directory, name)
-        end
-    end
-#end
+#         if ~occursin.(list_of_completed_names, name)
+#             results = Intrinisic_refresh(directory, name)
+#         end
+#     end
+# #end
 
 
 #pmap(x -> Intrinisic_refresh_run(Base_directory, x), short_list)

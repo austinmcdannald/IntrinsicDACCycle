@@ -69,6 +69,7 @@ function Intrinisic_refresh(directory, name)
     
     #Generate heat of adsorption along the path
     q_CO2, q_CO2_err = qₐ∞(βs, Kh_CO₂) #kJ/mol of gas
+    @show q_CO2_err
     q_CO2  *= 10^3 #[J/mol]
     q_CO2_err  *= 10^3 #[J/mol]
     q_N2, q_N2_err = qₐ∞(βs, Kh_N₂) #kJ/mol of gas
@@ -166,7 +167,8 @@ function Intrinisic_refresh(directory, name)
     Results_Dict["E_Balance"] = E_Balance_Dict
 
     #Write the results to a JSON file
-    results_file = directory*"/Intrinsic_cycle/Intrinsic_cyle_"*name*".json"
+    results_file = directory*"Intrinsic_cycle"*name*".json"
+    # results_file = directory*"/Intrinsic_cycle/Intrinsic_cyle_"*name*".json"
     open(results_file, "w") do f
         JSON.print(f, Results_Dict, 4)
     end
