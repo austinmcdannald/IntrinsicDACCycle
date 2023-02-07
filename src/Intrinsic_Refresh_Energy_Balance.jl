@@ -167,8 +167,8 @@ function Intrinisic_refresh(directory, name)
     Results_Dict["E_Balance"] = E_Balance_Dict
 
     #Write the results to a JSON file
-    results_file = directory*"Intrinsic_cycle"*name*".json"
-    # results_file = directory*"/Intrinsic_cycle/Intrinsic_cyle_"*name*".json"
+    # results_file = directory*"Intrinsic_cycle"*name*".json"
+    results_file = directory*"/Intrinsic_cycle/Intrinsic_cyle_"*name*".json"
     open(results_file, "w") do f
         JSON.print(f, Results_Dict, 4)
     end
