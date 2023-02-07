@@ -25,6 +25,12 @@ using Plots
 # ╔═╡ 32e219a6-60f8-48e5-b238-8a76818700da
 using JSON
 
+# ╔═╡ 8fd427db-c1fc-4524-890d-9adde218c773
+using DataFrames
+
+# ╔═╡ 0b1dbe45-c4c7-42da-9c96-db5f6229575d
+using QHull
+
 # ╔═╡ 0b5dca9e-5773-47c6-bd4e-7c91a64d7332
 cd("/users/asm6/Julia_scripts/IntrinsicDACCycle")
 
@@ -38,16 +44,10 @@ begin
 	#strip off the .json tag
     list_of_materials = replace.(list_of_material_files, ".json" => "")
 	#filter for _clean matierals
-	list_of_clean_materials = filter(x -> occursin.("_clean", x), list_of_materials)
+	# list_of_clean_materials = filter(x -> occursin.("_clean", x), list_of_materials)
 end
 	
 	
-
-# ╔═╡ 2efeee35-b918-4b7f-aba1-f80a6b49db00
-short_list = rand(list_of_clean_materials, 100)
-
-# ╔═╡ 06149c0e-a612-4039-bdde-93a9f79af3dc
-list_of_clean_materials
 
 # ╔═╡ e470bad6-e3d1-4ccf-a1ef-1a5b043f6955
 begin
@@ -60,22 +60,17 @@ begin
 end
 
 
-# ╔═╡ 38710c90-7dd1-4a2b-a77c-c45c9fc2e87f
-test = findall(x->x in short_list, list_of_intrinsic_mat)
-
-# ╔═╡ 72c3aac7-8b92-478e-b5f3-8e65ff67753a
-test_run = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, short_list[2])
-
-# ╔═╡ 742db65a-b46d-41ab-99fd-0e7531327322
-# results = pmap(x -> IntrinsicDACCycle.Intrinisic_refresh(Base_directory, x), short_list)
-
 # ╔═╡ e93ddc8a-aa46-4e17-ae79-f20fa70b2164
 begin
-	for name in list_of_clean_materials
+	for name in list_of_materials
 		try
-			thing = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, name)
+			#Try to load the file name
+			material_string = Base_directory*"/Intrinsic_cycle/"*"Intrinsic_cyle_"*name
+			thing = JSON.parsefile(material_string)
+			
 		catch
-			thing = []
+			#If the file doesn't exist, make it.
+			thing = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, name)
 		end
 	end
 end
@@ -134,6 +129,51 @@ begin
 	ylabel!("Purity of Captured CO2")
 end
 
+# ╔═╡ d3099090-b66e-43d0-b494-59315b45dd4c
+efficiencies_MJ_ton
+
+# ╔═╡ a3b3ed71-4ae8-40de-a6d4-cf76efb8623c
+begin
+	#Find the Pareto Front minimizing the MJ/ton and maximizing purity
+	df = DataFrame(x=efficiencies_MJ_ton, y = purities)
+	#Sort the data frame on the lowest to highest MJ/ton 
+	sort!(df, rev=false)
+	#Add that point to the pareto front
+	pareto = df[1:1, :]
+	#Look at each row of the dataframe (getting worse in MJ/ton)
+	## if that point has a higher purity than the latest point in the pareto front
+	## add it to the pareto front
+	foreach(row -> row.y > pareto.y[end] && push!(pareto,row), eachrow(df))
+
+	#Plot all the data points
+	plot(efficiencies_MJ_ton, purities, 
+		 seriestype=:scatter,
+	     xaxis=:log)
+	#Add the pereto front
+	plot!(pareto.x,pareto.y, seriestype= :line)
+	#Add labels
+	xlabel!("Intrinsic Capture Efficiency [MJ/ton]")
+	ylabel!("Purity of Captured CO₂")
+end
+
+# ╔═╡ 60b30400-efb6-4ee0-9814-47f499feaec9
+begin
+	#Plot all the data points
+	plot(efficiencies_MJ_ton, purities, 
+		 seriestype=:scatter,
+	     # xaxis=:lin
+		 )
+	#Add the pereto front
+	plot!(pareto.x,pareto.y, seriestype= :line)
+	#Add labels
+	xlabel!("Intrinsic Capture Efficiency [MJ/ton]")
+	ylabel!("Purity of Captured CO2")
+	xlims!(-10^7, 1.6*10^8)
+end
+
+# ╔═╡ a0603bca-93d5-49a9-b287-1ed6bfc60e6f
+length(pareto.x)
+
 # ╔═╡ Cell order:
 # ╠═0b5dca9e-5773-47c6-bd4e-7c91a64d7332
 # ╠═d313100c-e005-4d27-bccf-623098b7c26a
@@ -143,12 +183,7 @@ end
 # ╠═343b401d-43f4-4959-8496-552c654a9a6f
 # ╠═3efa1d09-db11-456f-bf6b-184a2946b86e
 # ╠═42007682-9091-43d2-bbe2-dbe7a1a5b886
-# ╠═2efeee35-b918-4b7f-aba1-f80a6b49db00
-# ╠═06149c0e-a612-4039-bdde-93a9f79af3dc
 # ╠═e470bad6-e3d1-4ccf-a1ef-1a5b043f6955
-# ╠═38710c90-7dd1-4a2b-a77c-c45c9fc2e87f
-# ╠═72c3aac7-8b92-478e-b5f3-8e65ff67753a
-# ╠═742db65a-b46d-41ab-99fd-0e7531327322
 # ╠═e93ddc8a-aa46-4e17-ae79-f20fa70b2164
 # ╠═6be91aca-ac94-41b8-a803-16eaf35f46bd
 # ╠═32e219a6-60f8-48e5-b238-8a76818700da
@@ -157,3 +192,9 @@ end
 # ╠═628c049a-254c-44a8-9ea2-84190fd66678
 # ╠═0085b415-394e-4434-a83a-247db4bc7e7a
 # ╠═c158ec08-1fdd-42e3-8ee2-2360402b4a35
+# ╠═d3099090-b66e-43d0-b494-59315b45dd4c
+# ╠═8fd427db-c1fc-4524-890d-9adde218c773
+# ╠═a3b3ed71-4ae8-40de-a6d4-cf76efb8623c
+# ╠═60b30400-efb6-4ee0-9814-47f499feaec9
+# ╠═a0603bca-93d5-49a9-b287-1ed6bfc60e6f
+# ╠═0b1dbe45-c4c7-42da-9c96-db5f6229575d
