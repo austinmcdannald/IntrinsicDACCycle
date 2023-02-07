@@ -46,6 +46,9 @@ end
 # ╔═╡ 2efeee35-b918-4b7f-aba1-f80a6b49db00
 short_list = rand(list_of_clean_materials, 100)
 
+# ╔═╡ 06149c0e-a612-4039-bdde-93a9f79af3dc
+list_of_clean_materials
+
 # ╔═╡ e470bad6-e3d1-4ccf-a1ef-1a5b043f6955
 begin
 	#get list of completed intrinsic annalysis
@@ -64,12 +67,16 @@ test = findall(x->x in short_list, list_of_intrinsic_mat)
 test_run = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, short_list[2])
 
 # ╔═╡ 742db65a-b46d-41ab-99fd-0e7531327322
-results = pmap(x -> IntrinsicDACCycle.Intrinisic_refresh(Base_directory, x), short_list)
+# results = pmap(x -> IntrinsicDACCycle.Intrinisic_refresh(Base_directory, x), short_list)
 
 # ╔═╡ e93ddc8a-aa46-4e17-ae79-f20fa70b2164
 begin
-	for name in short_list
-		thing = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, name)
+	for name in list_of_clean_materials
+		try
+			thing = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, name)
+		catch
+			thing = []
+		end
 	end
 end
 
@@ -97,11 +104,16 @@ begin
 	ylabel!("Purity of Captured CO2")
 end
 
-# ╔═╡ 206797be-2d39-4e20-8cbb-fd25bae7c53b
-efficiencies[efficiencies .> 3.1*10^-8]
+# ╔═╡ 628c049a-254c-44a8-9ea2-84190fd66678
+begin
+	plot(efficiencies, purities, 
+		 seriestype=:scatter,
+	     xaxis=:log)
+	xlabel!("Intrinsic Capture Efficiency [mol/J]")
+	ylabel!("Purity of Captured CO2")
 
-# ╔═╡ b88310f1-1cad-4dbb-95be-d22eda8b2526
-intrinsic_analysis_files[efficiencies .> 3.1*10^-8]
+	# xlims!()
+end
 
 # ╔═╡ 0085b415-394e-4434-a83a-247db4bc7e7a
 begin
@@ -115,26 +127,12 @@ end
 
 # ╔═╡ c158ec08-1fdd-42e3-8ee2-2360402b4a35
 begin
-	plot(efficiencies_MJ_ton, 1 .- purities, seriestype=:scatter)
+	plot(efficiencies_MJ_ton, purities, 
+		 seriestype=:scatter,
+	     xaxis=:log)
 	xlabel!("Intrinsic Capture Efficiency [MJ/ton]")
-	ylabel!("1 - Purity of Captured CO2")
+	ylabel!("Purity of Captured CO2")
 end
-
-# ╔═╡ b865b800-2fed-4e7b-b5dc-7147e3e61746
-size(efficiencies_MJ_ton)
-
-# ╔═╡ f0e0a2b0-12d7-4adf-9ac3-22013482cc40
-begin
-	name_file = "Intrinsic_cyle_LORMOW_clean.json"
-	material_string = Base_directory*"/Intrinsic_cycle/"*name_file
-	material = JSON.parsefile(material_string)
-end
-
-# ╔═╡ f5a9a833-6948-4ceb-bf62-1f32f468516e
-material["Refresh_Path"]["Temperatures"]
-
-# ╔═╡ e4a5d1ac-a9f2-429d-af24-fbba116f66cc
-
 
 # ╔═╡ Cell order:
 # ╠═0b5dca9e-5773-47c6-bd4e-7c91a64d7332
@@ -146,6 +144,7 @@ material["Refresh_Path"]["Temperatures"]
 # ╠═3efa1d09-db11-456f-bf6b-184a2946b86e
 # ╠═42007682-9091-43d2-bbe2-dbe7a1a5b886
 # ╠═2efeee35-b918-4b7f-aba1-f80a6b49db00
+# ╠═06149c0e-a612-4039-bdde-93a9f79af3dc
 # ╠═e470bad6-e3d1-4ccf-a1ef-1a5b043f6955
 # ╠═38710c90-7dd1-4a2b-a77c-c45c9fc2e87f
 # ╠═72c3aac7-8b92-478e-b5f3-8e65ff67753a
@@ -155,11 +154,6 @@ material["Refresh_Path"]["Temperatures"]
 # ╠═32e219a6-60f8-48e5-b238-8a76818700da
 # ╠═2f050716-a409-4cde-acbe-9317056bf4e2
 # ╠═c71bcba2-a9af-48df-a028-c56a7bf2e1d2
-# ╠═206797be-2d39-4e20-8cbb-fd25bae7c53b
-# ╠═b88310f1-1cad-4dbb-95be-d22eda8b2526
+# ╠═628c049a-254c-44a8-9ea2-84190fd66678
 # ╠═0085b415-394e-4434-a83a-247db4bc7e7a
 # ╠═c158ec08-1fdd-42e3-8ee2-2360402b4a35
-# ╠═b865b800-2fed-4e7b-b5dc-7147e3e61746
-# ╠═f0e0a2b0-12d7-4adf-9ac3-22013482cc40
-# ╠═f5a9a833-6948-4ceb-bf62-1f32f468516e
-# ╠═e4a5d1ac-a9f2-429d-af24-fbba116f66cc
