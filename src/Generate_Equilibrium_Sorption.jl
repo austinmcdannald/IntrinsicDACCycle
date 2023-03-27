@@ -82,7 +82,6 @@ function Generate_sorption_path(Ts, Ps, α, Kh_CO2, Kh_N2, material)
     #Extrapolate the CO2 isotherm to the current β
     #convert to [μmol/(kg Pa)] for numerical stability
     Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs[1], Kh_CO2, material) .* 1e6 #[nmol/(kg Pa)]
-    print("Henry Constant = ", Henry_CO2, "[nmol/(kg Pa)]")
     PHenry_CO2 =  reshape(Henry_CO2 .* Pressures,:) #[nmol/kg]
     CO2_df = pd.DataFrame( Dict( "P"=> Pressures,
                                  "loading" => PHenry_CO2))
