@@ -4,6 +4,7 @@ authors = ["Austin McDannald <austin.mcdannald@nist.gov> and contributors"]
 version = "0.1.0"
 
 [deps]
+BSplines = "488c2830-172b-11e9-1591-253b8a7df96d"
 Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"

@@ -69,7 +69,7 @@ begin
 	T_start_upper = [400] #[K]
 
 	ΔT_lower = zero(ΔT) #[K]
-	ΔT_upper = 1.0 .+ zero(ΔT) #[K]
+	ΔT_upper = 0.90 .+ zero(ΔT) #[K]
 
 	P_start = [101325.0] .+ 101325.0/steps #[Pa]
 	#limit the ΔP to only reach "rough vaccuum" 100 Pa.
@@ -79,7 +79,8 @@ begin
 	P_start_upper = 1.1 .* [101325.0] #[Pa]
 
 	#Lower limit of ΔP is to reach "rough vaccum" 100 Pa
-	ΔP_lower = (500.0 .- P_start[1])./steps .+ zero(ΔP) #[Pa] 
+	ΔP_lower = (0.1*P_start .- P_start[1])./steps .+ zero(ΔP) #[Pa]
+	# ΔP_lower = (500 .- P_start[1])./steps .+ zero(ΔP) #[Pa]
 	ΔP_upper = zero(ΔP) #[Pa]
 	
 end
@@ -136,7 +137,8 @@ ScorePath(parameters)
 
 # ╔═╡ e91b9339-2f35-4494-934d-d51a7e76431a
 begin
-	method = Metaheuristics.NSGA3(N= 200)
+	N= 400
+	method = Metaheuristics.NSGA3(N= N)
 	optimize!(ScorePath, bounds, method)
 end
 
@@ -232,7 +234,37 @@ begin
 end
 
 # ╔═╡ 92d40140-47ce-4849-a334-5a068621fbcd
-results.best_sol
+Metaheuristics.show(results)
+
+# ╔═╡ 6cd92279-4c49-4f0e-bb95-329ef2b8ab11
+begin
+	all_parameters = zeros(N, length(results.best_sol.x))
+	for (i, item) in enumerate(method.status.population)
+		all_parameters[i,:] = item.x
+	end
+	all_T_starts = all_parameters[:,1]
+	all_ΔTs = all_parameters[:,2:steps+1]
+
+	all_Ts = all_T_starts .+ cumsum(all_ΔTs, dims = 2)
+
+	all_P_starts = all_parameters[:,steps+2]
+	all_ΔPs = all_parameters[:,steps+3:end]
+
+	all_Ps = all_P_starts .+ cumsum(all_ΔPs, dims = 2)
+end
+
+# ╔═╡ adb52661-974a-44d0-ae46-9d46726b7116
+begin
+plot(all_Ts', all_Ps', label=false)
+xlabel!("Temperature (K)")
+ylabel!("Pressure (atm)")
+end
+
+# ╔═╡ c7a93e89-dede-47da-9cbe-fdb6d4abc897
+all_Ps[1,:]
+
+# ╔═╡ d18bd1b3-ddaa-4b05-b517-a31772ebbf38
+
 
 # ╔═╡ 3c515132-de69-4259-892d-e5ff7841b7f6
 pareto_ξ
@@ -283,7 +315,7 @@ function dumb(x)
 		sqrt(x)
 	catch 
 		# none
-		nothing
+		"Domain error"
 	end
 	
 	return y
@@ -394,6 +426,10 @@ dumb(-2.0)
 # ╠═4393adc0-cba9-4a80-8a06-19965dda414b
 # ╠═5d8806f5-4f23-4525-9277-cb80c59a5247
 # ╠═92d40140-47ce-4849-a334-5a068621fbcd
+# ╠═6cd92279-4c49-4f0e-bb95-329ef2b8ab11
+# ╠═adb52661-974a-44d0-ae46-9d46726b7116
+# ╠═c7a93e89-dede-47da-9cbe-fdb6d4abc897
+# ╠═d18bd1b3-ddaa-4b05-b517-a31772ebbf38
 # ╠═3c515132-de69-4259-892d-e5ff7841b7f6
 # ╠═8f6e4f92-2f5f-4295-bf3d-fadc519f74ac
 # ╠═1443d6fa-51d3-445c-bc56-10a82e1f36d7
