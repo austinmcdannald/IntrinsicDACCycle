@@ -76,31 +76,33 @@ begin
 
 	steps = maximum([T_steps, P_steps])
 
-	δT = ΔT/steps
-	δP = ΔP/steps
-
-	test_T = collect(T_start:δT:T_start+ΔT)
-	test_P = collect(P_start:δP:P_start+ΔP)
+	test_T = collect(LinRange(T_start, T_start+ΔT, steps))
+	test_P = collect(LinRange(P_start, P_start+ΔP, steps))
 end
+
+# ╔═╡ 3c685fd5-ab67-49ef-a2f3-c7958edafd88
+collect(LinRange(T_start, T_start+ΔT, steps))
 
 # ╔═╡ 351e4648-ef6d-4049-bc1b-6d209651d233
 length(T_start:0.5:T_start+ΔT)
 
 # ╔═╡ f28dddcb-2e5e-41d0-a111-c0a47c525475
 function ScorePath(parameters)
+	T_start = parameters[1]
+	ΔT = parameters[2]
+	P_start = parameters[3]
+	ΔP = parameters[4]
+	
 	T_steps = length(T_start:0.5:T_start+ΔT)
 	P_steps = length(P_start:-250:P_start+ΔP)
 
 	steps = maximum([T_steps, P_steps])
 
-	δT = ΔT/steps
-	δP = ΔP/steps
+	Ts = collect(LinRange(T_start, T_start+ΔT, steps))
+	Ps = collect(LinRange(P_start, P_start+ΔP, steps))
 
-	Ts = collect(T_start:δT:T_start+ΔT)
-	Ps = collect(P_start:δP:P_start+ΔP)
-
-	# name = "OKILEA_clean"
-	name = "acs.cgd.5b01554_VAGNUP1452791_clean"
+	name = "OKILEA_clean"
+	# name = "acs.cgd.5b01554_VAGNUP1452791_clean"
 	# name = "CUCKIV_charged"
 	ξ, α_end =  IntrinsicDACCycle.Intrinisic_refresh_objectives(Base_directory, 													  name,
 															Ts, Ps, α)
@@ -130,13 +132,28 @@ begin
 end
 
 # ╔═╡ eeb4c1ac-bf72-4043-8423-72cdb6e1af86
-results = Metaheuristics.get_result(method)
+begin
+	results_state = Metaheuristics.get_result(method)
+	results = pareto_front(results_state)
+
+	non_dom_solutions = Metaheuristics.get_non_dominated_solutions(method.status.population)
+
+	results_parameters = Vector{Vector}(undef, length(non_dom_solutions))
+
+	for (i,solution) in enumerate(non_dom_solutions)
+		# @show solution.x
+		results_parameters[i] = solution.x
+	end
+	results_parameters = cat(results_parameters..., dims = 2)'
+		
+	
+end
 
 # ╔═╡ f1c74094-5d1a-4d28-85ad-8ae9872fdb2d
 begin
-	cost = results.best_sol.f	
-	@show cost[1], "J/mol"
-	resutlant_ξ = 1/cost[1]
+	cost = results[:,1]	
+	@show cost, "J/mol"
+	resutlant_ξ = 1 ./ cost
 	@show resutlant_ξ, "mol/J"
 
 	inpurity = cost[2]
@@ -144,22 +161,23 @@ begin
 	purity = 1-inpurity
 	@show purity, "mol/mol"
 
-	path = results.best_sol.x
-	path_T_start = path[1]
-	path_ΔT = path[2]
-	path_P_start = path[3]
-	path_ΔP = path[4]
-
-	path_T_steps = length(path_T_start:0.5:path_T_start+path_ΔT)
-	path_P_steps = length(path_P_start:-250:path_P_start+path_ΔP)
-
-	path_steps = maximum([path_T_steps, path_P_steps])
-
-	path_δT = path_ΔT/path_steps
-	path_δP = path_ΔP/path_steps
-
-	path_Ts = collect(path_T_start:path_δT:path_T_start+path_ΔT)
-	path_Ps = collect(path_P_start:path_δP:path_P_start+path_ΔP)
+	path_Ts = Vector{Vector}(undef, length(results_parameters[:,1]))
+	path_Ps = Vector{Vector}(undef, length(results_parameters[:,1]))
+	for (i,param) in enumerate(eachrow(results_parameters))
+	
+		path_T_start = param[1]
+		path_ΔT = param[2]
+		path_P_start = param[3]
+		path_ΔP = param[4]
+	
+		path_T_steps = length(path_T_start:0.5:path_T_start+path_ΔT)
+		path_P_steps = length(path_P_start:-250:path_P_start+path_ΔP)
+	
+		path_steps = maximum([path_T_steps, path_P_steps])
+	
+		path_Ts[i] = collect(LinRange(path_T_start, path_T_start+path_ΔT, path_steps))
+		path_Ps[i] = collect(LinRange(path_P_start, path_P_start+path_ΔP, path_steps))
+	end
 	
 end
 
@@ -170,37 +188,49 @@ xlabel!("Temperature (K)")
 ylabel!("Pressure (atm)")
 end
 
+# ╔═╡ 917c0a33-f8e3-4e9c-9ea9-1158d2d87a5e
+results
+
 # ╔═╡ b08f3cbc-daf2-4596-9b3a-1fb0ef63ede1
 begin
-	pop_f = zeros(length(results.population), 2)
-	for (i, pop) in enumerate(results.population)
+	pop_f = zeros(length(results_state.population), 2)
+	for (i, pop) in enumerate(results_state.population)
 		pop_f[i, 1] = pop.f[1]
 		pop_f[i, 2] = pop.f[2]
 	end
-	A = pareto_front(results)
+	# A = pareto_front(results)
 
 	
 	
 	scatter(pop_f[:,1], pop_f[:,2], label="Populuation", markersize = 2)
-	scatter!([A[:,1]],[A[:,2]], label="Pareto", 
+	scatter!([results[:,1]],[results[:,2]], label="Pareto", 
 			 markershape = :star, markersize = 10)
 	xlabel!("Cost [J/mol]")
 	ylabel!("1-Purity")
 end
 
-# ╔═╡ 1c28a67c-8d4d-424e-8d6b-8f545917a6c4
-A
-
 # ╔═╡ f579ee58-cb55-4422-9d85-3d360736f163
 begin
-	pareto_ξ = [1 ./ A[:,1]]
-	pareto_α = [1 .- A[:,2]]
+	pareto_ξ = [1 ./ results[:,1]]
+	pareto_α = [1 .- results[:,2]]
 
 	pop_ξ = 1 ./ pop_f[:,1]
 	pop_α = 1 .- pop_f[:,2]
 
 	scatter(pop_ξ, pop_α, label = "Population", markersize=2,
-			xlim = (7.475e-6,7.48e-6), ylim=(0.98, 1))
+			# xlim = (0,2.5e-6), ylim=(0.670, 0.675),
+			)
+	scatter!(pareto_ξ, pareto_α, label = "Pareto", 
+			 markershape = :star, markersize = 10)
+	xlabel!("Efficiency [mol/J]")
+	ylabel!("Purity")
+end
+
+# ╔═╡ cfda1228-7087-4e1c-8c2f-95edefcbb980
+begin
+	scatter(pop_ξ, pop_α, label = "Population", markersize=2,
+			xlim = (9e-6,9.5e-6), ylim=(.95, 1),
+			)
 	scatter!(pareto_ξ, pareto_α, label = "Pareto", 
 			 markershape = :star, markersize = 10)
 	xlabel!("Efficiency [mol/J]")
@@ -209,7 +239,7 @@ end
 
 # ╔═╡ b8a112d6-7b4f-4e77-8cf2-9ef2416f8ecc
 begin
-	all_parameters = zeros(N, length(results.best_sol.x))
+	all_parameters = zeros(N, length(results_state.best_sol.x))
 	for (i, item) in enumerate(method.status.population)
 		all_parameters[i,:] = item.x
 	end
@@ -223,7 +253,7 @@ begin
 	all_Ps = Vector{Vector}(undef,N)
 
 	for i in 1:400
-		@show i
+	
 		T_start_i = all_parameters[i,1]
 		ΔT_i = all_parameters[i,2]
 
@@ -235,11 +265,9 @@ begin
 
 		steps_i = maximum([T_steps_i, P_steps_i])
 
-		δT_i = ΔT_i/steps_i
-		δP_i = ΔP_i/steps_i
-
-		Ts_i = collect(T_start_i:δT_i:T_start_i+ΔT_i)
-		Ps_i = collect(P_start_i:δP_i:P_start_i+ΔP_i)
+		
+		Ts_i = collect(LinRange(T_start_i, T_start_i+ΔT_i, steps_i))
+		Ps_i = collect(LinRange(P_start_i, P_start_i+ΔP_i, steps_i))
 
 		all_Ts[i] = Ts_i
 		all_Ps[i] = Ps_i
@@ -248,25 +276,26 @@ begin
 	end
 end
 
-# ╔═╡ 177eb196-f5e3-4b5e-9bdf-d15b79487cb7
-all_Ts
-
-# ╔═╡ d9e86f60-995f-46ff-aa0c-dc706bf51de6
-all_parameters
-
-# ╔═╡ 2614d974-9cb6-408d-9619-18e6de2e3c5b
-for i in 1:length(all_parameters)
-	@show i
-end
-
 # ╔═╡ bceb620d-fe0c-40f2-972c-a96ee8365f96
 begin
-for i in 1:400
-plot!(all_Ts[i]', all_Ps[i]', label=false)
+	plot(path_Ts, path_Ps,linewidth = 5, linecolor=:red, label="Pareto")
+	for i in 1:200
+		i_Ts = all_Ts[i]
+		i_Ps = all_Ps[i]
+		plot!(i_Ts, i_Ps, linecolor=:lightblue, label=false)
 
+	end
+	xlabel!("Temperature (K)")
+	ylabel!("Pressure (atm)")
 end
-xlabel!("Temperature (K)")
-ylabel!("Pressure (atm)")
+
+# ╔═╡ e3f9f154-0f72-4bf4-9940-dc5321079198
+length(all_Ps)
+
+# ╔═╡ aa69f943-3366-4a37-8182-5db0efd254ac
+for i in 1:400
+	@show length(all_Ts[i]) - length(all_Ps[i])
+
 end
 
 # ╔═╡ 2008e837-d9f1-4aaa-b222-f4250732bc79
@@ -283,6 +312,7 @@ all_Ts[1]
 # ╠═572a91bc-5957-48e0-a97a-a2f72b02ce50
 # ╠═04ac3d9e-79f7-4c48-b6b1-3bb17931627d
 # ╠═44de46c6-18d6-45b3-8b10-eabf01403fe4
+# ╠═3c685fd5-ab67-49ef-a2f3-c7958edafd88
 # ╠═351e4648-ef6d-4049-bc1b-6d209651d233
 # ╠═f28dddcb-2e5e-41d0-a111-c0a47c525475
 # ╠═de0dc6e8-b401-4be4-b25c-f00cdc51952c
@@ -291,12 +321,12 @@ all_Ts[1]
 # ╠═eeb4c1ac-bf72-4043-8423-72cdb6e1af86
 # ╠═f1c74094-5d1a-4d28-85ad-8ae9872fdb2d
 # ╠═ba406eb6-58c7-4fb2-a70f-9c74510b0412
-# ╠═1c28a67c-8d4d-424e-8d6b-8f545917a6c4
+# ╠═917c0a33-f8e3-4e9c-9ea9-1158d2d87a5e
 # ╠═b08f3cbc-daf2-4596-9b3a-1fb0ef63ede1
 # ╠═f579ee58-cb55-4422-9d85-3d360736f163
+# ╠═cfda1228-7087-4e1c-8c2f-95edefcbb980
 # ╠═b8a112d6-7b4f-4e77-8cf2-9ef2416f8ecc
-# ╠═177eb196-f5e3-4b5e-9bdf-d15b79487cb7
-# ╠═d9e86f60-995f-46ff-aa0c-dc706bf51de6
-# ╠═2614d974-9cb6-408d-9619-18e6de2e3c5b
 # ╠═bceb620d-fe0c-40f2-972c-a96ee8365f96
+# ╠═e3f9f154-0f72-4bf4-9940-dc5321079198
+# ╠═aa69f943-3366-4a37-8182-5db0efd254ac
 # ╠═2008e837-d9f1-4aaa-b222-f4250732bc79
