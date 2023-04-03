@@ -8,7 +8,8 @@ using NaNStatistics
 using LogExpFunctions
 using Roots
 using PyCall
-using Distributed 
+using Distributed
+using Metaheuristics 
 
 
 const pyiast = PyNULL()

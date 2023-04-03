@@ -128,8 +128,11 @@ ScorePath(parameters)
 begin
 	N= 400
 	method = Metaheuristics.NSGA3(N= N)
-	optimize!(ScorePath, bounds, method)
+	# Metaheuristics.optimize!(ScorePath, bounds, method)
 end
+
+# ╔═╡ a23ded95-810a-436e-a0f2-65576f46006c
+Metaheuristics.optimize!(ScorePath, bounds, method)
 
 # ╔═╡ eeb4c1ac-bf72-4043-8423-72cdb6e1af86
 begin
@@ -137,8 +140,9 @@ begin
 	results = pareto_front(results_state)
 
 	non_dom_solutions = Metaheuristics.get_non_dominated_solutions(method.status.population)
+	num_solutions = length(non_dom_solutions)
 
-	results_parameters = Vector{Vector}(undef, length(non_dom_solutions))
+	results_parameters = Vector{Vector}(undef, num_solutions)
 
 	for (i,solution) in enumerate(non_dom_solutions)
 		# @show solution.x
@@ -149,6 +153,9 @@ begin
 	
 end
 
+# ╔═╡ ac9dd29e-9d86-4a32-9bc5-3cb8035e046c
+results
+
 # ╔═╡ f1c74094-5d1a-4d28-85ad-8ae9872fdb2d
 begin
 	cost = results[:,1]	
@@ -156,9 +163,9 @@ begin
 	resutlant_ξ = 1 ./ cost
 	@show resutlant_ξ, "mol/J"
 
-	inpurity = cost[2]
+	inpurity = results[:,2]
 	@show inpurity, "mol/mol"
-	purity = 1-inpurity
+	purity = 1 .-inpurity
 	@show purity, "mol/mol"
 
 	path_Ts = Vector{Vector}(undef, length(results_parameters[:,1]))
@@ -229,7 +236,7 @@ end
 # ╔═╡ cfda1228-7087-4e1c-8c2f-95edefcbb980
 begin
 	scatter(pop_ξ, pop_α, label = "Population", markersize=2,
-			xlim = (9e-6,9.5e-6), ylim=(.95, 1),
+			xlim = (9.48e-6,9.55e-6), ylim=(.995, 1),
 			)
 	scatter!(pareto_ξ, pareto_α, label = "Pareto", 
 			 markershape = :star, markersize = 10)
@@ -289,17 +296,89 @@ begin
 	ylabel!("Pressure (atm)")
 end
 
-# ╔═╡ e3f9f154-0f72-4bf4-9940-dc5321079198
-length(all_Ps)
+# ╔═╡ 818dac49-a4f8-483f-b1da-57d9b0a1592a
+name = "OKILEA_clean"
 
-# ╔═╡ aa69f943-3366-4a37-8182-5db0efd254ac
-for i in 1:400
-	@show length(all_Ts[i]) - length(all_Ps[i])
-
+# ╔═╡ 96358c21-3559-4782-af16-6695688c4016
+begin
+	re_eval_1 = IntrinsicDACCycle.Intrinisic_refresh_path(Base_directory, name,
+																path_Ts[1], path_Ps[1], 400/1000000)
+	
 end
 
-# ╔═╡ 2008e837-d9f1-4aaa-b222-f4250732bc79
-all_Ts[1]
+# ╔═╡ 20607a25-364d-4c9d-a0b6-cc45d49a2a93
+begin
+	re_eval_2 = IntrinsicDACCycle.Intrinisic_refresh_path(Base_directory, name,
+																path_Ts[2], path_Ps[2], 400/1000000)
+	
+end
+
+# ╔═╡ 0d70aa0d-9a21-463a-af28-160565e7b2b4
+begin
+	re_eval = re_eval_1
+	for i in 1:2
+		re_eval["Refresh_Path"]["Temperatures"] = append!(re_eval_2["Refresh_Path"]["Temperatures"]) 
+end
+
+# ╔═╡ 1f8c62db-9689-49e6-a614-3a865643ae04
+re_eval_1["E_Balance"]
+
+# ╔═╡ 5e24035e-caab-4aad-a8c2-a705270b359f
+begin
+	#Start Dictionaries for the results
+    Results_Dict = sort(Dict{String, Any}("Name" => name))
+    Path_Dict = sort(Dict{String, Any}("Refresh_Path" => "Definition of refresh path and material properties along that path (in per kg of sorbent basis)."))
+    E_Balance_Dict = sort(Dict{String, Any}("E_Balance" => "Energy balance along path"))
+    Step_1_Dict = sort(Dict{String, Any}("Step_1" => "Adsorption"))
+    Step_2_Dict = sort(Dict{String, Any}("Step_2" => "Desorption"))
+    Step_3_Dict = sort(Dict{String, Any}("Step_3" => "Waste energy recovery"))
+
+	Path_Dict["Temperatures"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Temperature_units"] = "K"
+    Path_Dict["Pressures"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Pressure_units"] = "Pa"
+    Path_Dict["Betas"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Beta_units"] = "mol/kJ"
+
+	Path_Dict["Henry_CO2"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_CO2_err"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_N2"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_N2_err"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_units"] = "mmol/(kg Pa)"
+end
+
+# ╔═╡ d24fa094-f8ee-4478-bab4-618b0837f3f7
+Path_Dict["Temperatures"][1] = path_Ts[1]
+
+# ╔═╡ ad8cd890-c283-4aa4-9bbf-1508ae4b9b90
+Path_Dict["Temperatures"][2] = path_Ts[2]
+
+# ╔═╡ d00819c5-1d46-432a-8a21-89ce7d9f2149
+Path_Dict["Betas"][1] = re_eval_1["Refresh_Path"]["Betas"]
+
+# ╔═╡ cdb14900-0505-496b-9eeb-dd1b1009214e
+
+
+# ╔═╡ 1ec24909-4600-4281-af9c-c011911d5fb9
+Path_Dict
+
+# ╔═╡ e3ccdbd6-c14a-4310-af04-dd919d1f00dc
+begin
+	ting1 = re_eval["Refresh_Path"]["Temperatures"]
+	ting2 = re_eval["Refresh_Path"]["Temperatures"]
+	ting3 = Vector(ting1)
+	ting3 = append!(ting3, Vector(ting2))
+end
+
+# ╔═╡ a1283867-39a0-4ab7-8372-d9704b722867
+begin
+	for i in 1:1
+		@show i
+	end
+end
+
+# ╔═╡ 4f335030-8e38-4e54-9131-8382d5fe5082
+crazy_results = IntrinsicDACCycle.Optimize_Intrinsic_Refresh(Base_directory, name, 400/1000000)
 
 # ╔═╡ Cell order:
 # ╠═a84d9990-ccdd-11ed-0a67-33aa723171a0
@@ -318,7 +397,9 @@ all_Ts[1]
 # ╠═de0dc6e8-b401-4be4-b25c-f00cdc51952c
 # ╠═7be547e3-44a3-42cc-a5a3-0bef4f7191f9
 # ╠═dc058dbe-6f79-48b2-acd3-06967be77656
+# ╠═a23ded95-810a-436e-a0f2-65576f46006c
 # ╠═eeb4c1ac-bf72-4043-8423-72cdb6e1af86
+# ╠═ac9dd29e-9d86-4a32-9bc5-3cb8035e046c
 # ╠═f1c74094-5d1a-4d28-85ad-8ae9872fdb2d
 # ╠═ba406eb6-58c7-4fb2-a70f-9c74510b0412
 # ╠═917c0a33-f8e3-4e9c-9ea9-1158d2d87a5e
@@ -327,6 +408,17 @@ all_Ts[1]
 # ╠═cfda1228-7087-4e1c-8c2f-95edefcbb980
 # ╠═b8a112d6-7b4f-4e77-8cf2-9ef2416f8ecc
 # ╠═bceb620d-fe0c-40f2-972c-a96ee8365f96
-# ╠═e3f9f154-0f72-4bf4-9940-dc5321079198
-# ╠═aa69f943-3366-4a37-8182-5db0efd254ac
-# ╠═2008e837-d9f1-4aaa-b222-f4250732bc79
+# ╠═818dac49-a4f8-483f-b1da-57d9b0a1592a
+# ╠═96358c21-3559-4782-af16-6695688c4016
+# ╠═20607a25-364d-4c9d-a0b6-cc45d49a2a93
+# ╠═0d70aa0d-9a21-463a-af28-160565e7b2b4
+# ╠═1f8c62db-9689-49e6-a614-3a865643ae04
+# ╠═5e24035e-caab-4aad-a8c2-a705270b359f
+# ╠═d24fa094-f8ee-4478-bab4-618b0837f3f7
+# ╠═ad8cd890-c283-4aa4-9bbf-1508ae4b9b90
+# ╠═d00819c5-1d46-432a-8a21-89ce7d9f2149
+# ╠═cdb14900-0505-496b-9eeb-dd1b1009214e
+# ╠═1ec24909-4600-4281-af9c-c011911d5fb9
+# ╠═e3ccdbd6-c14a-4310-af04-dd919d1f00dc
+# ╠═a1283867-39a0-4ab7-8372-d9704b722867
+# ╠═4f335030-8e38-4e54-9131-8382d5fe5082
