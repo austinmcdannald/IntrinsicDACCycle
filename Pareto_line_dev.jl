@@ -128,11 +128,11 @@ ScorePath(parameters)
 begin
 	N= 400
 	method = Metaheuristics.NSGA3(N= N)
-	# Metaheuristics.optimize!(ScorePath, bounds, method)
+	Metaheuristics.optimize!(ScorePath, bounds, method)
 end
 
 # ╔═╡ a23ded95-810a-436e-a0f2-65576f46006c
-Metaheuristics.optimize!(ScorePath, bounds, method)
+# optimize!(ScorePath, bounds, method)
 
 # ╔═╡ eeb4c1ac-bf72-4043-8423-72cdb6e1af86
 begin
@@ -297,7 +297,8 @@ begin
 end
 
 # ╔═╡ 818dac49-a4f8-483f-b1da-57d9b0a1592a
-name = "OKILEA_clean"
+# name = "OKILEA_clean"
+name = "acs.cgd.5b01554_VAGNUP1452791_clean"
 
 # ╔═╡ 96358c21-3559-4782-af16-6695688c4016
 begin
@@ -306,22 +307,8 @@ begin
 	
 end
 
-# ╔═╡ 20607a25-364d-4c9d-a0b6-cc45d49a2a93
-begin
-	re_eval_2 = IntrinsicDACCycle.Intrinisic_refresh_path(Base_directory, name,
-																path_Ts[2], path_Ps[2], 400/1000000)
-	
-end
-
-# ╔═╡ 0d70aa0d-9a21-463a-af28-160565e7b2b4
-begin
-	re_eval = re_eval_1
-	for i in 1:2
-		re_eval["Refresh_Path"]["Temperatures"] = append!(re_eval_2["Refresh_Path"]["Temperatures"]) 
-end
-
 # ╔═╡ 1f8c62db-9689-49e6-a614-3a865643ae04
-re_eval_1["E_Balance"]
+re_eval_1
 
 # ╔═╡ 5e24035e-caab-4aad-a8c2-a705270b359f
 begin
@@ -410,8 +397,6 @@ crazy_results = IntrinsicDACCycle.Optimize_Intrinsic_Refresh(Base_directory, nam
 # ╠═bceb620d-fe0c-40f2-972c-a96ee8365f96
 # ╠═818dac49-a4f8-483f-b1da-57d9b0a1592a
 # ╠═96358c21-3559-4782-af16-6695688c4016
-# ╠═20607a25-364d-4c9d-a0b6-cc45d49a2a93
-# ╠═0d70aa0d-9a21-463a-af28-160565e7b2b4
 # ╠═1f8c62db-9689-49e6-a614-3a865643ae04
 # ╠═5e24035e-caab-4aad-a8c2-a705270b359f
 # ╠═d24fa094-f8ee-4478-bab4-618b0837f3f7

@@ -23,7 +23,7 @@ function Extrapolate_Cv(directory, name, Temperatures_test)
     logObsNoise = log.(σ_Cᵥ) #Specified oberservation noise
 
     gp = GP(Temperatures,Cᵥ,μ_prior,K,logObsNoise) #Define GP
-    optimize!(gp; noise=false, method = ConjugateGradient()) #Optimize GP
+    GaussianProcesses.optimize!(gp; noise=false, method = ConjugateGradient()) #Optimize GP
 
     μ, σ² = predict_f(gp, Temperatures_test, full_cov=true) #Predict GP
     μ = reshape(μ, (:,1))

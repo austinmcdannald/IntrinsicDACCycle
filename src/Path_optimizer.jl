@@ -1,4 +1,8 @@
 
+
+"""Function to optimize the start and end temperatures and pressures 
+for a givin material and inlet CO2 concentration.
+Assumes a linear path,"""
 function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,  
                                     α::Real)
 
@@ -60,7 +64,7 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
     #Perform the multi objective optimization
     N= 400
 	method = Metaheuristics.NSGA3(N= N)
-	optimize!(ScorePath, bounds, method)
+	Metaheuristics.optimize!(ScorePath, bounds, method)
 
     #Unpack the results (Pareto front of perfrormance metrics and their parameters)
     results_state = Metaheuristics.get_result(method)
@@ -110,57 +114,59 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
     Path_Dict["Betas"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Beta_units"] = "mol/kJ"
 
-	Path_Dict["Henry_CO2"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Henry_CO2_err"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Henry_N2"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Henry_N2_err"] = Vector{Vector}(undef,num_solutions)
+	Path_Dict["Henry_CO2"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Henry_CO2_err"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Henry_N2"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Henry_N2_err"] = Vector{Matrix}(undef,num_solutions)
     Path_Dict["Henry_units"] = "mmol/(kg Pa)"
 
     Path_Dict["Moles_CO2"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Moles_N2"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Moles_units"] = "mol/kg"
 
-    Path_Dict["Heat_of_adsorb_CO2"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Heat_of_adsorb_CO2_err"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Heat_of_adsorb_N2"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Heat_of_adsorb_N2_err"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Heat_of_adsorb_CO2"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Heat_of_adsorb_CO2_err"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Heat_of_adsorb_N2"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Heat_of_adsorb_N2_err"] = Vector{Matrix}(undef,num_solutions)
     Path_Dict["Heat_of_adsorb_units"] = "J/mol"
 
-    Path_Dict["Specific_heat_sorbent"] = Vector{Vector}(undef,num_solutions)
-    Path_Dict["Specific_heat_sorbent_err"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Specific_heat_sorbent"] = Vector{Matrix}(undef,num_solutions)
+    Path_Dict["Specific_heat_sorbent_err"] = Vector{Matrix}(undef,num_solutions)
     Path_Dict["Specific_heat_sorbent_units"] = "J/(kg K)"
 
-    Step_1_Dict["Heat_to_adsorb_CO2"] = Vector{Vector}(undef,num_solutions)
-    Step_1_Dict["Heat_to_adsorb_N2"] = Vector{Vector}(undef,num_solutions)
-    Step_1_Dict["Work_to_adsorb_CO2"] = Vector{Vector}(undef,num_solutions)
-    Step_1_Dict["Work_to_adsorb_N2"] = Vector{Vector}(undef,num_solutions)
+    Step_1_Dict["Heat_to_adsorb_CO2"] = Vector{Real}(undef,num_solutions)
+    Step_1_Dict["Heat_to_adsorb_N2"] = Vector{Real}(undef,num_solutions)
+    Step_1_Dict["Work_to_adsorb_CO2"] = Vector{Real}(undef,num_solutions)
+    Step_1_Dict["Work_to_adsorb_N2"] = Vector{Real}(undef,num_solutions)
     Step_1_Dict["E_units"] = "J/kg_sorb"
 
-    Step_2_Dict["Heat_to_desorb_CO2"] = Vector{Vector}(undef,num_solutions)
-    Step_2_Dict["Heat_to_desorb_N2"] = Vector{Vector}(undef,num_solutions)
+    E_Balance_Dict["E1"] = Vector{Real}(undef,num_solutions)
+
+    Step_2_Dict["Heat_to_desorb_CO2"] = Vector{Matrix}(undef,num_solutions)
+    Step_2_Dict["Heat_to_desorb_N2"] = Vector{Matrix}(undef,num_solutions)
     Step_2_Dict["Work_to_desorb_CO2"] = Vector{Vector}(undef,num_solutions)
     Step_2_Dict["Work_to_desorb_N2"] = Vector{Vector}(undef,num_solutions)
     Step_2_Dict["E_to_heat_adsorbed_CO2"] = Vector{Vector}(undef,num_solutions)
     Step_2_Dict["E_to_heat_adsorbed_N2"] = Vector{Vector}(undef,num_solutions)
-    Step_2_Dict["E_to_heat_sorbent"] = Vector{Vector}(undef,num_solutions)
+    Step_2_Dict["E_to_heat_sorbent"] = Vector{Matrix}(undef,num_solutions)
     Step_2_Dict["E_to_change_pressure"] = Vector{Vector}(undef,num_solutions)
     Step_2_Dict["E_units"] = "J/kg_sorb"
 
-    E_Balance_Dict["E2"] = Vector{Vector}(undef,num_solutions)
+    E_Balance_Dict["E2"] = Vector{Real}(undef,num_solutions)
 
-    Step_3_Dict["E_recovered"] = Vector{Vector}(undef,num_solutions)
-    E_Balance_Dict["E3"] = Vector{Vector}(undef,num_solutions)
+    Step_3_Dict["E_recovered"] = Vector{Real}(undef,num_solutions)
+    E_Balance_Dict["E3"] = Vector{Real}(undef,num_solutions)
 
-    E_Balance_Dict["Total_E_of_cycle"] = Vector{Vector}(undef,num_solutions)
+    E_Balance_Dict["Total_E_of_cycle"] = Vector{Real}(undef,num_solutions)
     E_Balance_Dict["E_units"] = "J/kg_sorb"
 
-    Results_Dict["Captured_CO2"] = Vector{Vector}(undef,num_solutions)
-    Results_Dict["Captured_N2"] = Vector{Vector}(undef,num_solutions)
+    Results_Dict["Captured_CO2"] = Vector{Real}(undef,num_solutions)
+    Results_Dict["Captured_N2"] = Vector{Real}(undef,num_solutions)
     Results_Dict["Captured_gas_units"] = "mol/kg_sorb"
 
-    Results_Dict["Intrinsic_capture_efficiency"] = Vector{Vector}(undef,num_solutions)
+    Results_Dict["Intrinsic_capture_efficiency"] = Vector{Real}(undef,num_solutions)
     Results_Dict["Intrinsic_capture_efficiency_units"] = "mol/J"
-    Results_Dict["Purity_captured_CO2"] = Vector{Vector}(undef,num_solutions)
+    Results_Dict["Purity_captured_CO2"] = Vector{Real}(undef,num_solutions)
 
     #Re-evalutate the path at just the pareto front parameters
     for i in 1:num_solutions
@@ -199,6 +205,8 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
         Step_1_Dict["Heat_to_adsorb_N2"][i] = ith_step_1_dict["Heat_to_adsorb_N2"]
         Step_1_Dict["Work_to_adsorb_CO2"][i] = ith_step_1_dict["Work_to_adsorb_CO2"]
         Step_1_Dict["Work_to_adsorb_N2"][i] = ith_step_1_dict["Work_to_adsorb_N2"]
+
+        E_Balance_Dict["E1"][i] = ith_e_balance_dict["E1"]
         
         Step_2_Dict["Heat_to_desorb_CO2"][i] = ith_step_2_dict["Heat_to_desorb_CO2"]
         Step_2_Dict["Heat_to_desorb_N2"][i] = ith_step_2_dict["Heat_to_desorb_N2"]
@@ -217,7 +225,7 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
         E_Balance_Dict["Total_E_of_cycle"][i] = ith_e_balance_dict["Total_E_of_cycle"]
         
         Results_Dict["Captured_CO2"][i] = ith_results["Captured_CO2"]
-        Results_Dict["Captured_N2"][i] = ith_results[["Captured_N2"]]
+        Results_Dict["Captured_N2"][i] = ith_results["Captured_N2"]
         
         Results_Dict["Intrinsic_capture_efficiency"][i] = ith_results["Intrinsic_capture_efficiency"]
         Results_Dict["Purity_captured_CO2"][i] = ith_results["Purity_captured_CO2"]
