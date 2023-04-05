@@ -1,16 +1,17 @@
 
 """Function to read in the GCMC simulation results,
-and perform the full intrinsic refresh cycle analysis."""
+and perform the full intrinsic refresh cycle analysis.
+Using fixed T,P path."""
 function Intrinisic_refresh(directory, name)
     #Read in all the GCMC results
     material, Kh_N₂, Kh_CO₂, One_atm_N₂ = read_jsons(directory, name)
 
-    #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
-    close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
-    #If not close enough
-    if close_enough_test == false
-        return nothing
-    end
+    # #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    # close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    # #If not close enough
+    # if close_enough_test == false
+    #     return nothing
+    # end
 
     #Start Dictionaries for the results
     Results_Dict = sort(Dict{String, Any}("Name" => name))
@@ -34,6 +35,16 @@ function Intrinisic_refresh(directory, name)
     Ps = append!(collect(P1s), collect(P2s))
     α = 400/1000000 #400 ppm is the concentration of CO2 in ambient air
     βs = T_to_β.(Ts) #[mol/kJ]
+
+    #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    #If not close enough
+    if close_enough_test == false
+        #set Ts and Ps and βs to NaN
+        Ts = Ts .* NaN
+        Ps = Ps .* NaN
+        βs = βs .* NaN
+    end
 
     Path_Dict["Temperatures"] = Ts
     Path_Dict["Temperature_units"] = "K"
@@ -190,12 +201,12 @@ function Intrinisic_refresh_path(directory::String, name::String,
     #Read in all the GCMC results
     material, Kh_N₂, Kh_CO₂, One_atm_N₂ = read_jsons(directory, name)
 
-    #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
-    close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
-    #If not close enough
-    if close_enough_test == false
-        return nothing
-    end
+    # #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    # close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    # #If not close enough
+    # if close_enough_test == false
+    #     return nothing
+    # end
 
     #Start Dictionaries for the results
     Results_Dict = sort(Dict{String, Any}("Name" => name))
@@ -207,6 +218,16 @@ function Intrinisic_refresh_path(directory::String, name::String,
     
     #Convert the Ts to inverse temperature β
     βs = T_to_β.(Ts) #[mol/kJ]
+
+    #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    #If not close enough
+    if close_enough_test == false
+        #set Ts and Ps and βs to NaN
+        Ts = Ts .* NaN
+        Ps = Ps .* NaN
+        βs = βs .* NaN
+    end
 
     Path_Dict["Temperatures"] = Ts
     Path_Dict["Temperature_units"] = "K"
@@ -355,15 +376,25 @@ function Intrinisic_refresh_objectives(directory::String, name::String,
     #Read in all the GCMC results
     material, Kh_N₂, Kh_CO₂, One_atm_N₂ = read_jsons(directory, name)
 
+    # #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    # close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    # #If not close enough
+    # if close_enough_test == false
+    #     return nothing
+    # end
+
+    #Convert the Ts to inverse temperature β
+    βs = T_to_β.(Ts) #[mol/kJ]
+
     #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
     close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
     #If not close enough
     if close_enough_test == false
-        return nothing
+        #set Ts and Ps and βs to NaN
+        Ts = Ts .* NaN
+        Ps = Ps .* NaN
+        βs = βs .* NaN
     end
-
-    #Convert the Ts to inverse temperature β
-    βs = T_to_β.(Ts) #[mol/kJ]
 
     #Extrapolate Henry constants along the path
     #Extrapolate the CO2 isotherm to the βs
