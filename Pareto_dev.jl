@@ -31,12 +31,6 @@ Base_directory = "C:/Users/asm6/Documents/Projects/DAC/Results"
 # ╔═╡ 7fa47b3d-c53c-477c-b1ed-ff1c7ad2e0f0
 # using Evolutionary 
 
-# ╔═╡ 2d9d00f3-3e61-45e4-a7f6-dd7108034e1e
-# ╠═╡ disabled = true
-#=╠═╡
-thing = IntrinsicDACCycle.Intrinisic_refresh(Base_directory, "OKILEA_clean")
-  ╠═╡ =#
-
 # ╔═╡ 0ecdf2f3-7b5f-4ea7-9f5f-fa807ca1e58c
 begin
 	#Define refresh cycle (T, P) path and inlet concentration
