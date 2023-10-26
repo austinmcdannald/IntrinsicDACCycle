@@ -10,7 +10,6 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
     #specify Start and total Step
 	T_start = 273.0 #[K] 
 	ΔT = 200.0 #[K]
-    dT_max = 0.25
 
 	T_start_lower = 200.0 #[K]
 	T_start_upper = 400.0 #[K]
@@ -21,7 +20,6 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
 	P_start = 101325.0 #[Pa]
 	#limit the ΔP to only reach "rough vaccuum" 100 Pa.
 	ΔP = 100.0 - P_start #[Pa] the offset of 1 Pa ensures that the path of P never gets to 0 Pa. 
-    dP_max = -125.0
 
 	P_start_lower = 101325.0 #[Pa] 
 	P_start_upper = 1.1 .* [101325.0] #[Pa]
@@ -46,19 +44,14 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
         P_start = parameters[3]
         ΔP = parameters[4]
         
-        #Calculate the number of steps from start to start+Δ with the max T step or P step size
-        # T_steps = length(T_start:0.5:T_start+ΔT)
-        # P_steps = length(P_start:-250:P_start+ΔP)
-        T_steps = length(T_start:dT_max:T_start+ΔT)
-        P_steps = length(P_start:dP_max:P_start+ΔP)
+        T_steps = length(T_start:0.5:T_start+ΔT)
+        P_steps = length(P_start:-250:P_start+ΔP)
 
-        #Choose the larger number of steps
         steps = maximum([T_steps, P_steps])
-        #Create the T and P path with those steps
+
         Ts = collect(LinRange(T_start, T_start+ΔT, steps))
         Ps = collect(LinRange(P_start, P_start+ΔP, steps))
 
-        #Perform the Intrinsic Refresh Analysis with those steps
         ξ, α_end =  IntrinsicDACCycle.Intrinisic_refresh_objectives(Base_directory, name,
                                                                 Ts, Ps, α)
         
@@ -97,8 +90,8 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
 		path_P_start = param[3]
 		path_ΔP = param[4]
 	
-		path_T_steps = length(path_T_start:dT_max:path_T_start+path_ΔT)
-		path_P_steps = length(path_P_start:-dP_max:path_P_start+path_ΔP)
+		path_T_steps = length(path_T_start:0.5:path_T_start+path_ΔT)
+		path_P_steps = length(path_P_start:-250:path_P_start+path_ΔP)
 	
 		path_steps = maximum([path_T_steps, path_P_steps])
 	
