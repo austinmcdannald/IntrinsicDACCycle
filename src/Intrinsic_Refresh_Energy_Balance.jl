@@ -463,6 +463,139 @@ function Intrinisic_refresh_objectives(directory::String, name::String,
     return objectives
 end
 
+"""Function to read in the GCMC simulation results,
+and perform the full intrinsic refresh cycle analysis
+Along an arbitrary path in (Temperature,Pressure)-space.
+Using the uncertainties from the GCMC and Cv extraplolation
+Return  the posterior distribution of performance metrics."""
+function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::String, 
+                                 Ts::AbstractArray, Ps::AbstractArray, 
+                                 α, samples)
+    #Ts is a 1D array of Temperatures [K] along the path
+    #Ps is a 1D array of Total Pressure [Pa] along the path
+    #α is a scalar of the Concentration of CO2 in a mixture with N2 [mol/mol]
+
+    #Read in all the GCMC results
+    material, Kh_N₂, Kh_CO₂, One_atm_N₂ = read_jsons(directory, name)
+
+    # #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    # close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    # #If not close enough
+    # if close_enough_test == false
+    #     return nothing
+    # end
+
+    #Convert the Ts to inverse temperature β
+    βs = T_to_β.(Ts) #[mol/kJ]
+
+    #Test if the Henry constant at 1 atm is close enough to the direct GCMC at 1 atm
+    close_enough_test = Close_enough(material, Kh_N₂, One_atm_N₂)
+    #If not close enough
+    if close_enough_test == false
+        #set Ts and Ps and βs to NaN
+        Ts = Ts .* NaN
+        Ps = Ps .* NaN
+        βs = βs .* NaN
+    end
+
+    #Extrapolate Henry constants along the path
+    #Extrapolate the CO2 isotherm to the βs
+    Henry_CO2_mean, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO₂, material) #[mmol/(kg Pa)]
+
+    #Extrapolate the N2 isotherm to the βs
+    Henry_N2_mean, Henry_N2_err = Kh_extrapolate(βs, Kh_N₂, material)  #[mmol/(kg Pa)]
+
+    #Generate heat of adsorption along the path
+    q_CO2_mean, q_CO2_err = qₐ∞(βs, Kh_CO₂) #kJ/mol of gas
+    q_CO2_mean  *= 10^3 #[J/mol]
+    q_CO2_err  *= 10^3 #[J/mol]
+    q_N2_mean, q_N2_err = qₐ∞(βs, Kh_N₂) #kJ/mol of gas
+    q_N2_mean  *= 10^3 #[J/mol]
+    q_N2_err  *= 10^3 #[J/mol]
+    
+    #Generate specific heat of sorbent along the path
+    cv_s_mean, cv_s_err =  Extrapolate_Cv(directory, name, Ts) #[J/(kg K)]
+
+    """
+    Now we'll create distributions of the material parameters,
+    take draws from those distributions,
+    and poplulate the posterior distributions of the performance objectives.
+    """
+
+    Henry_CO2_dist = rand(Normal(Henry_CO2_mean, Henry_CO2_err), samples)
+    Henry_N2_dist = rand(Normal(Henry_N2_mean, Henry_N2_err), samples)
+
+    q_CO2_dist = rand(Normal(q_CO2_mean, q_CO2_err), samples)
+    q_N2_dist = rand(Normal(q_N2_mean, q_N2_err), samples)
+
+    cv_s_dist = rand(MvNormal(cv_s_mean, cv_s_err), samples)
+
+    objectives_dist = []
+
+    for i in 1:samples
+        Henry_CO2 = Henry_CO2_dist[i]
+        Henry_N2 = Henry_N2_dist[i]
+
+        q_CO2 = q_CO2_dist[i]
+        q_N2 = q_N2_dist[i]
+
+        cv_s = cv_s_dist[:,1]
+
+
+
+        #Generate Equilibrium loadings along the path
+        n_CO2, n_N2, d_CO2, d_N2, αs = Analytical_Henry_Generate_sorption_path(βs, Ps, α, Henry_CO2, Henry_N2) #[mmol/kg]
+        n_CO2 *= 10^-3 #convert to [mol/kg]
+        n_N2 *= 10^-3 #convert to [mol/kg]
+        d_CO2 *= 10^-3 #convert to [mol/kg]
+        d_N2 *= 10^-3 #convert to [mol/kg]
+    
+
+
+        #Energy balance for step 1
+        (Q_adsorb_CO2, Q_adsorb_N2, 
+        W_adsorb_CO2, W_adsorb_N2) = intrinsic_refresh_step_1(Ts, 
+                                                        n_CO2, n_N2,
+                                                        q_CO2, q_N2)
+        # [J/kg_sorb]
+
+        E1 = Q_adsorb_CO2 +Q_adsorb_N2 + W_adsorb_CO2 + W_adsorb_N2 # [J/kg_sorb]
+
+        #Energy balance for step 2
+        (Q_CO2, Q_N2, 
+        W_desorb_CO2, W_desorb_N2, 
+        E_heat_ads_CO2, E_heat_ads_N2, 
+        E_heat_sorb, E_P) = intrinsic_refresh_step_2(Ts, Ps, 
+                                                    n_CO2, n_N2, d_CO2, d_N2,
+                                                    q_CO2, q_N2,
+                                                    cv_s)
+        # [J/kg_sorb]
+    
+        E2 = nansum(Q_CO2 .+ Q_N2 
+                    .+ W_desorb_CO2 .+ W_desorb_N2 
+                    .+ E_heat_ads_CO2 .+ E_heat_ads_N2 
+                    .+ E_heat_sorb .+ E_P)   # [J/kg_sorb]
+
+        #Energy balance for step 3
+        E3 = 0 # [J/kg_sorb]
+
+        #Total Energy of refresh cycle
+        E = E1 + E2 + E3# [J/kg_sorb]
+
+        #Total captureed CO2 and N2
+        Δn_CO2 = n_CO2[1] - n_CO2[end] # [mol/kg_sorb]
+        Δn_N2 = n_N2[1] - n_N2[end] # [mol/kg_sorb]
+
+        #Calculate performance metrics 
+        Intrinsic_capture_efficiency = Δn_CO2/E #[mol/J]
+        Purity_captured_CO2 = Δn_CO2/(Δn_CO2 + Δn_N2) #[]
+
+        objectives = [Intrinsic_capture_efficiency, Purity_captured_CO2]
+        append!(objectives_dist, objectives)
+    end
+
+    return objectives_dist
+end
 
 """Function to calculate the energy balance during the 
 first step of the intrinsic refresh cycle: Adsorption at constat Temperature and total Pressure."""
