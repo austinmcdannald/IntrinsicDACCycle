@@ -10,6 +10,8 @@ using Roots
 using PyCall
 using Distributed
 using Metaheuristics 
+using Distributions
+using Random
 
 
 const pyiast = PyNULL()

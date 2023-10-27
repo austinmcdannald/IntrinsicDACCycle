@@ -516,28 +516,30 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
     #Generate specific heat of sorbent along the path
     cv_s_mean, cv_s_err =  Extrapolate_Cv(directory, name, Ts) #[J/(kg K)]
 
+
     """
     Now we'll create distributions of the material parameters,
     take draws from those distributions,
     and poplulate the posterior distributions of the performance objectives.
     """
 
-    Henry_CO2_dist = rand(Normal(Henry_CO2_mean, Henry_CO2_err), samples)
-    Henry_N2_dist = rand(Normal(Henry_N2_mean, Henry_N2_err), samples)
+    Henry_CO2_dist = rand(MvNormal(vec(Henry_CO2_mean), vec(Henry_CO2_err)), samples)
+    Henry_N2_dist = rand(MvNormal(vec(Henry_N2_mean), vec(Henry_N2_err)), samples)
 
-    q_CO2_dist = rand(Normal(q_CO2_mean, q_CO2_err), samples)
-    q_N2_dist = rand(Normal(q_N2_mean, q_N2_err), samples)
+    q_CO2_dist = rand(MvNormal(vec(q_CO2_mean), vec(q_CO2_err)), samples)
+    q_N2_dist = rand(MvNormal(vec(q_N2_mean), vec(q_N2_err)), samples)
 
-    cv_s_dist = rand(MvNormal(cv_s_mean, cv_s_err), samples)
+    cv_s_dist = rand(MvNormal(vec(cv_s_mean), vec(cv_s_err)), samples)
 
-    objectives_dist = []
+    capture_e_dist = []
+    purity_dist = []
 
     for i in 1:samples
-        Henry_CO2 = Henry_CO2_dist[i]
-        Henry_N2 = Henry_N2_dist[i]
+        Henry_CO2 = Henry_CO2_dist[:,i]
+        Henry_N2 = Henry_N2_dist[:,i]
 
-        q_CO2 = q_CO2_dist[i]
-        q_N2 = q_N2_dist[i]
+        q_CO2 = q_CO2_dist[:,i]
+        q_N2 = q_N2_dist[:,i]
 
         cv_s = cv_s_dist[:,1]
 
@@ -590,10 +592,11 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
         Intrinsic_capture_efficiency = Δn_CO2/E #[mol/J]
         Purity_captured_CO2 = Δn_CO2/(Δn_CO2 + Δn_N2) #[]
 
-        objectives = [Intrinsic_capture_efficiency, Purity_captured_CO2]
-        append!(objectives_dist, objectives)
-    end
+        append!(capture_e_dist, Intrinsic_capture_efficiency)
+        append!(purity_dist, Purity_captured_CO2)
 
+    end
+    objectives_dist = [capture_e_dist, purity_dist]
     return objectives_dist
 end
 

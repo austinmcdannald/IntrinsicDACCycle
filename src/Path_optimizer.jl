@@ -76,7 +76,7 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
     #Unpack the results (Pareto front of perfrormance metrics and their parameters)
     results_state = Metaheuristics.get_result(method)
 	results = pareto_front(results_state)
-
+    @show results
 	non_dom_solutions = Metaheuristics.get_non_dominated_solutions(method.status.population)
 	num_solutions = length(non_dom_solutions)
 
@@ -87,7 +87,7 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
 		results_parameters[i] = solution.x
 	end
 	results_parameters = cat(results_parameters..., dims = 2)'
-
+    @show results_parameters
     path_Ts = Vector{Vector}(undef, length(results_parameters[:,1]))
 	path_Ps = Vector{Vector}(undef, length(results_parameters[:,1]))
 	for (i,param) in enumerate(eachrow(results_parameters))
