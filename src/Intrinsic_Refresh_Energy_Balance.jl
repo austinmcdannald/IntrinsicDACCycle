@@ -533,7 +533,8 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
 
     capture_e_dist = []
     purity_dist = []
-
+    Δn_CO2_dist = []
+    Δn_N2_dist = []
     for i in 1:samples
         Henry_CO2 = Henry_CO2_dist[:,i]
         Henry_N2 = Henry_N2_dist[:,i]
@@ -594,9 +595,11 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
 
         append!(capture_e_dist, Intrinsic_capture_efficiency)
         append!(purity_dist, Purity_captured_CO2)
+        append!(Δn_CO2_dist, Δn_CO2)
+        append!(Δn_N2_dist, Δn_N2)
 
     end
-    objectives_dist = [capture_e_dist, purity_dist]
+    objectives_dist = [capture_e_dist, purity_dist, Δn_CO2_dist, Δn_N2_dist]
     return objectives_dist
 end
 

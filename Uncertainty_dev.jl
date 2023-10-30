@@ -29,6 +29,9 @@ using Plots
 # ╔═╡ 9b4bdf3e-f56a-46f4-9b12-181791871870
 #Pkg.activate("/users/asm6/.Julia/dev/IntrinsicDACCycle")
 
+# ╔═╡ 9014e932-b0ff-4d0c-8cfe-14a83c0df77d
+
+
 # ╔═╡ 35ce9d94-7205-4322-b6f2-0016e74895c5
 Base_directory = "C:/Users/asm6/Documents/Projects/DAC/Results"
 
@@ -70,16 +73,29 @@ Objecive_dist =
 # ╔═╡ b3fb388d-3b00-42e9-adc2-f48f4ff055d6
 [mean(Objecive_dist[2]), std(Objecive_dist[2])]
 
+# ╔═╡ 39ada708-596a-4685-831a-f755f5227f3d
+histogram(Objecive_dist[1])
+
+# ╔═╡ 03c44985-94a6-47d9-96a5-0de6f7abcbdf
+histogram(Objecive_dist[2])
+
+# ╔═╡ bdd44a58-e966-4edd-8a79-4844f83ad442
+histogram(Objecive_dist[3])
+
+# ╔═╡ 34ddcf3d-5f69-4fd1-93db-882c5c209c30
+histogram(Objecive_dist[4])
+
 # ╔═╡ 0ede4183-46d2-47ea-9a66-29191cea7549
 Results_dict = IntrinsicDACCycle.Optimize_Intrinsic_Refresh(Base_directory, name, α)
 
 # ╔═╡ aa5da8a4-ee18-435c-a5b4-57c278907511
-
+Results_dict_2 = IntrinsicDACCycle.Optimize_Intrinsic_Refresh_w_err(Base_directory, name, α)
 
 # ╔═╡ Cell order:
 # ╠═fea28170-74cb-11ee-052f-cd5041d01722
 # ╠═9b4bdf3e-f56a-46f4-9b12-181791871870
 # ╠═d4376d43-56c8-46f5-91ba-14d9a2e6bcb9
+# ╠═9014e932-b0ff-4d0c-8cfe-14a83c0df77d
 # ╠═39adca47-0916-40bf-9a68-ccca916286bc
 # ╠═800ca690-0b6f-488d-80aa-34bb8c9d28e4
 # ╠═79e0e799-7652-4647-b3e6-e38b50936eee
@@ -91,5 +107,9 @@ Results_dict = IntrinsicDACCycle.Optimize_Intrinsic_Refresh(Base_directory, name
 # ╠═f2fa8a18-60c0-4d3c-8e80-8ea5dd0de69a
 # ╠═1d4927ee-5bef-4ee8-86b6-654efef4abb9
 # ╠═b3fb388d-3b00-42e9-adc2-f48f4ff055d6
+# ╠═39ada708-596a-4685-831a-f755f5227f3d
+# ╠═03c44985-94a6-47d9-96a5-0de6f7abcbdf
+# ╠═bdd44a58-e966-4edd-8a79-4844f83ad442
+# ╠═34ddcf3d-5f69-4fd1-93db-882c5c209c30
 # ╠═0ede4183-46d2-47ea-9a66-29191cea7549
 # ╠═aa5da8a4-ee18-435c-a5b4-57c278907511
