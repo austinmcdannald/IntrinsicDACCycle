@@ -1,3 +1,65 @@
+"""
+Define a function to try the parameters of the path
+    and return the objectives and constraint costs (gx, hx)
+""" 
+function ScorePath(parameters, dT_max, dP_max, 
+                   Base_directory, name, α,  
+                   return_step_size = false, i = 0)
+
+    T_start = parameters[1]
+    ΔT = parameters[2]
+    P_start = parameters[3]
+    ΔP = parameters[4]
+    
+    outputs = try
+        
+        #Calculate the number of steps from start to start+Δ with the max T step or P step size
+        T_steps = length(T_start:dT_max:T_start+ΔT)
+        P_steps = length(P_start:dP_max:P_start+ΔP)
+
+        #Choose the larger number of steps
+        steps = maximum([T_steps, P_steps])
+        #Create the T and P path with those steps
+        Ts = collect(LinRange(T_start, T_start+ΔT, steps))
+        Ps = collect(LinRange(P_start, P_start+ΔP, steps))
+
+        #Perform the Intrinsic Refresh Analysis with those steps
+        ξ, α_end =  IntrinsicDACCycle.Intrinisic_refresh_objectives(Base_directory, name,
+                                                                Ts, Ps, α)
+
+        (ξ, α_end, dT_max, dP_max, i)
+    catch e
+        if isa(e, DomainError) 
+            #If there is a DomainError it's likely from a numerical instabilty with IAST 
+            # So take a smaller step size and try again. Do this up to 10 times
+            if i <= 10
+                dT_max *= 0.75
+                dP_max *= 0.75
+                i += 1
+                println("Re-trying with smaller steps!")
+                ScorePath(parameters, dT_max, dP_max, Base_directory, name, α, return_step_size, i)
+            else
+                println("Too many iterations, likely something other than stepsize is wrong")
+                throw(e)
+            end
+        end
+    end
+    ξ = outputs[1]
+    α_end = outputs[2]
+    objectives = [1/ξ, 1-α_end]
+    gx = [0.0] # inequality constraints
+    hx = [0.0] # equality constraints
+
+    if return_step_size == false
+        return objectives, gx, hx
+    else
+        dT_max = outputs[3]
+        dP_max = outputs[4]
+        return objectives, gx, hx, dT_max, dP_max
+    end
+end
+
+
 
 
 """Function to optimize the start and end temperatures and pressures 
@@ -36,42 +98,17 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
 	upper_bound = cat(T_start_upper, ΔT_upper, P_start_upper, ΔP_upper, dims = 1)
 	bounds = cat(lower_bound, upper_bound, dims = 2)'
 
-    """
-    Define a function to try the parameters of the path
-        and return the objectives and constraint costs (gx, hx)
-    """ 
-    function ScorePath(parameters)
-        T_start = parameters[1]
-        ΔT = parameters[2]
-        P_start = parameters[3]
-        ΔP = parameters[4]
-        
-        #Calculate the number of steps from start to start+Δ with the max T step or P step size
-        # T_steps = length(T_start:0.5:T_start+ΔT)
-        # P_steps = length(P_start:-250:P_start+ΔP)
-        T_steps = length(T_start:dT_max:T_start+ΔT)
-        P_steps = length(P_start:dP_max:P_start+ΔP)
 
-        #Choose the larger number of steps
-        steps = maximum([T_steps, P_steps])
-        #Create the T and P path with those steps
-        Ts = collect(LinRange(T_start, T_start+ΔT, steps))
-        Ps = collect(LinRange(P_start, P_start+ΔP, steps))
-
-        #Perform the Intrinsic Refresh Analysis with those steps
-        ξ, α_end =  IntrinsicDACCycle.Intrinisic_refresh_objectives(Base_directory, name,
-                                                                Ts, Ps, α)
-        
-        objectives = [1/ξ, 1-α_end]
-        gx = [0.0] # inequality constraints
-        hx = [0.0] # equality constraints
-        return objectives, gx, hx
-    end
 
     #Perform the multi objective optimization
     N= 800
 	method = Metaheuristics.NSGA3(N= N)
-	Metaheuristics.optimize!(ScorePath, bounds, method)
+
+    function f(x)
+        return ScorePath(x, dT_max, dP_max, Base_directory, name, α, false, 0)
+    end
+
+	Metaheuristics.optimize!(f, bounds, method)
 
     #Unpack the results (Pareto front of perfrormance metrics and their parameters)
     results_state = Metaheuristics.get_result(method)
@@ -91,7 +128,12 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
     path_Ts = Vector{Vector}(undef, length(results_parameters[:,1]))
 	path_Ps = Vector{Vector}(undef, length(results_parameters[:,1]))
 	for (i,param) in enumerate(eachrow(results_parameters))
-	
+        
+        #To recover the stepsize run ScorePath again
+        objectives = ScorePath(param, dT_max, dP_max, Base_directory, name, α, true)
+        dT_max = objectives[4]
+        dP_max = objectives[5]
+
 		path_T_start = param[1]
 		path_ΔT = param[2]
 		path_P_start = param[3]
@@ -536,7 +578,7 @@ end
 """Function to optimize the start and end temperatures and pressures 
 for a givin material and inlet CO2 concentration.
 Assumes a linear path,
-With the uncertainties in performance metrics"""
+Reports the path parameters sampled and thier performances"""
 function Optimize_Intrinsic_Refresh_path_distributions(Base_directory::String, name::String,  
                                     α::Real)
 

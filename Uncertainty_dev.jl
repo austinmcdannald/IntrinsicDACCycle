@@ -32,6 +32,9 @@ using Plots
 # ╔═╡ 9679c9dc-b2cb-4542-a11c-ba152d252fcd
 using UMAP
 
+# ╔═╡ 0ef1bb72-ccf1-4553-9f61-07cd3562b974
+using LinearAlgebra
+
 # ╔═╡ 9b4bdf3e-f56a-46f4-9b12-181791871870
 #Pkg.activate("/users/asm6/.Julia/dev/IntrinsicDACCycle")
 
@@ -43,8 +46,8 @@ Base_directory = "C:/Users/asm6/Documents/Projects/DAC/Results"
 
 # ╔═╡ 38d44cae-df73-4dd1-bdc2-f4498fffd17f
 begin
-	# name = "OKILEA_clean"
-	name = "acs.cgd.5b01554_VAGNUP1452791_clean"
+	name = "OKILEA_clean"
+	# name = "acs.cgd.5b01554_VAGNUP1452791_clean"
 	# name = "CUCKIV_charged"
 end
 
@@ -116,6 +119,120 @@ begin
 end
 
 # ╔═╡ b515a8f1-af51-4414-8b4f-41641b0aa8d2
+ thing =  IntrinsicDACCycle.Optimize_Intrinsic_Refresh_path_distributions(Base_directory, name, α)
+
+# ╔═╡ 2a2d1fab-c270-4208-9623-b1c0ac7674c3
+begin
+	T_starts = []
+	T_ends = []
+	P_starts = []
+	P_ends = []
+	ξs = []
+	αs = []
+	for q in thing
+		T_start = q.x[1]
+		append!(T_starts, T_start)
+
+		T_end = q.x[1] + q.x[2]
+		append!(T_ends, T_end)
+
+		P_start = q.x[3]
+		append!(P_starts, P_start)
+
+		P_end = q.x[3] + q.x[4]
+		append!(P_ends, P_end)
+
+		ξ = 1/q.f[1]
+		append!(ξs, ξ)
+
+		α = 1 - q.f[2]
+		append!(αs, α)
+		
+	end
+	
+end
+
+
+# ╔═╡ 9667ca2e-1229-44ab-ad18-5e915ecd78dd
+begin
+	path_distributions = hcat(T_starts, T_ends, P_starts, P_ends, ξs, αs)
+	normalized_path_distributions = mapslices(path_distributions -> (path_distributions .- minimum(path_distributions))/(maximum(path_distributions) - minimum(path_distributions)), path_distributions, dims = 1)
+end
+	
+
+# ╔═╡ a48492c2-6efc-4d76-a4f3-77437d1efbf4
+transpose(normalized_path_distributions)
+
+# ╔═╡ 6b867663-86c0-4a5e-8ab9-e26a11271f02
+begin
+	#From 6D
+	# embedding = transpose(umap(transpose(normalized_path_distributions), 2))
+	#From 4D
+	embedding = transpose(umap(transpose(normalized_path_distributions[:,1:4]), 2))
+end
+
+# ╔═╡ 8065d2a3-2556-40db-8467-b353406cd7cc
+begin
+	scatter(embedding[:,1], embedding[:,2], zcolor = path_distributions[:, 5])
+end
+
+# ╔═╡ 7ce365ab-81ff-48ba-822f-66c6132ad6d1
+begin
+	scatter(embedding[:,1], embedding[:,2], zcolor = path_distributions[:, 6])
+end
+
+# ╔═╡ fd34de12-7bf4-4ce5-b081-3bd8d2e99e25
+begin
+	#From 6D
+	# embedding = transpose(umap(transpose(normalized_path_distributions), 2))
+	#From 4D
+	embedding_nn = transpose(umap(transpose(normalized_path_distributions[:,1:4]), 2, n_neighbors = 30), )
+	scatter(embedding_nn[:,1], embedding_nn[:,2], zcolor = path_distributions[:, 6])
+end
+
+# ╔═╡ d9503660-d9bb-4c73-b893-98b37509343e
+scatter(path_distributions[:,5], path_distributions[:,6])
+
+# ╔═╡ 2528a238-243d-44d0-8aa6-542f31dc14ff
+begin
+	#Look at all the pairwise distances in the 4D cycle parameter space
+	#then in the 2D performance metric space
+	# we want to inspect the points with the highest difference performance with the smallest difference in parameters
+
+	G_cycle_params = normalized_path_distributions[:,1:4] * 		 normalized_path_distributions[:,1:4]'
+	
+	D_cycle_params = sqrt.(diag(G_cycle_params) .+ diag(G_cycle_params)' .- 2 .* G_cycle_params)
+
+	G_perform = normalized_path_distributions[:,5:6] * normalized_path_distributions[:,5:6]'
+	
+	D_perform = sqrt.(diag(G_perform) .+ diag(G_perform)' .- 2 .* G_perform)
+
+	Ds_pairwise = hcat(reshape(D_perform, :,1), reshape(D_cycle_params, :,1))
+
+	Ds_sort = sortslices(Ds_pairwise, dims = 1, rev=true)
+
+	Ds_pareto = [Ds_sort[1,:]]
+	for j in 1:size(Ds_sort, 1)
+		D = Ds_sort[j,:]
+
+		if D[2] < Ds_pareto[end][2]
+			append!(Ds_pareto, [D])
+		end
+		
+	end
+	Ds_pareto_matrix = hcat(Ds_pareto...)'
+	scatter(Ds_pareto_matrix[:,2], Ds_pareto_matrix[:,1],
+			xlabel= "Distance in Cycle Parameter Space",
+			ylabel= "Distance in Performance Metric Space")
+end
+	
+
+# ╔═╡ 604cfb06-3e0b-4094-b5f0-4c5e4cf3a98d
+scatter(Ds_pairwise[:,2], Ds_pairwise[:,1],
+			xlabel= "Distance in Cycle Parameter Space",
+			ylabel= "Distance in Performance Metric Space")
+
+# ╔═╡ b395418d-6d85-4bc8-92d5-6bb20301fe68
 
 
 # ╔═╡ Cell order:
@@ -146,3 +263,15 @@ end
 # ╠═980e56de-6d31-4fa7-856a-71e85f52a3d9
 # ╠═92513c81-1076-4443-a651-858cde1485a5
 # ╠═b515a8f1-af51-4414-8b4f-41641b0aa8d2
+# ╠═2a2d1fab-c270-4208-9623-b1c0ac7674c3
+# ╠═9667ca2e-1229-44ab-ad18-5e915ecd78dd
+# ╠═a48492c2-6efc-4d76-a4f3-77437d1efbf4
+# ╠═6b867663-86c0-4a5e-8ab9-e26a11271f02
+# ╠═8065d2a3-2556-40db-8467-b353406cd7cc
+# ╠═7ce365ab-81ff-48ba-822f-66c6132ad6d1
+# ╠═fd34de12-7bf4-4ce5-b081-3bd8d2e99e25
+# ╠═d9503660-d9bb-4c73-b893-98b37509343e
+# ╠═0ef1bb72-ccf1-4553-9f61-07cd3562b974
+# ╠═2528a238-243d-44d0-8aa6-542f31dc14ff
+# ╠═604cfb06-3e0b-4094-b5f0-4c5e4cf3a98d
+# ╠═b395418d-6d85-4bc8-92d5-6bb20301fe68
