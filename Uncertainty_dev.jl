@@ -46,8 +46,8 @@ Base_directory = "C:/Users/asm6/Documents/Projects/DAC/Results"
 
 # ╔═╡ 38d44cae-df73-4dd1-bdc2-f4498fffd17f
 begin
-	name = "OKILEA_clean"
-	# name = "acs.cgd.5b01554_VAGNUP1452791_clean"
+	# name = "OKILEA_clean"
+	name = "acs.cgd.5b01554_VAGNUP1452791_clean"
 	# name = "CUCKIV_charged"
 end
 
@@ -120,6 +120,12 @@ end
 
 # ╔═╡ b515a8f1-af51-4414-8b4f-41641b0aa8d2
  thing =  IntrinsicDACCycle.Optimize_Intrinsic_Refresh_path_distributions(Base_directory, name, α)
+
+# ╔═╡ 69feaa47-2e07-44ff-9870-48528fae999f
+begin
+	parameters = [200.0, 400.0, 101325.0, 10132.0]
+	IntrinsicDACCycle.ScorePath(parameters, .25, -125.0, Base_directory, name, α)
+end
 
 # ╔═╡ 2a2d1fab-c270-4208-9623-b1c0ac7674c3
 begin
@@ -263,6 +269,7 @@ scatter(Ds_pairwise[:,2], Ds_pairwise[:,1],
 # ╠═980e56de-6d31-4fa7-856a-71e85f52a3d9
 # ╠═92513c81-1076-4443-a651-858cde1485a5
 # ╠═b515a8f1-af51-4414-8b4f-41641b0aa8d2
+# ╠═69feaa47-2e07-44ff-9870-48528fae999f
 # ╠═2a2d1fab-c270-4208-9623-b1c0ac7674c3
 # ╠═9667ca2e-1229-44ab-ad18-5e915ecd78dd
 # ╠═a48492c2-6efc-4d76-a4f3-77437d1efbf4
