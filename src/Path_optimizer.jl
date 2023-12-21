@@ -465,12 +465,54 @@ function Optimize_Intrinsic_Refresh_w_err(Base_directory::String, name::String,
     #Re-evalutate the path at just the pareto front parameters
     for i in 1:num_solutions
         #Re-evalutate the path
-        ith_results = Intrinisic_refresh_path(Base_directory, name,
-                                                path_Ts[i], path_Ps[i], α)
+        # if there is a sampling that give a domain error, re-try with smaller step sizes a few times
 
-        objectives_dist = Intrinisic_refresh_objectives_posterior_dist(Base_directory, name,
-                                                                                path_Ts[i], path_Ps[i], α,
-                                                                                100)
+        trial_Ts = path_Ts[i]
+        trial_Ps = path_Ps[i]
+
+        #Initialize containers for the results
+        ith_results = nothing
+        objectives_dist = nothing
+
+        for attempts in 1:10
+            ith_results = Intrinisic_refresh_path(Base_directory, name,
+                                                    trial_Ts, trial_Ps, α)
+
+            objectives_dist = Intrinisic_refresh_objectives_posterior_dist(Base_directory, name,
+                                                                                    trial_Ts, trial_Ps, α,
+                                                                                    100)
+            #Test if Ts_s are not NaNs (i.e. failed Close_enough test earlier)
+            test_1 = ~any(isnan.(path_Ts[i]))
+            #Test for domain error
+            test_2 = any(isnan.(objectives_dist[1]))
+            #if it passed the Close_enough test but still created a domain error 
+            if test_1 & test_2
+                new_Ts_start = path_Ts[i][1]
+                new_Ts_end = path_Ts[i][end]
+                #Create new T steps at finer resultion
+                new_dT = (path_Ts[i][2] - path_Ts[i][1])*0.75^attempts
+
+                new_Ps_start = path_Ps[i][1]
+                new_Ps_end = path_Ps[i][end]
+                #Create new P steps at finer resoluion
+                new_dP = (path_Ps[i][2] - path_Ps[i][1]) *0.75^attempts
+
+                new_path_T_steps = length(new_Ts_start:new_dT:new_Ts_end)
+                new_path_P_steps = length(new_Ps_start:new_dP:new_Ps_end)
+
+                new_path_steps = maximum([new_path_T_steps, new_path_P_steps])
+
+            
+                #Re-define the path Ts and Ps
+                trial_Ts = collect(LinRange(new_Ts_start, new_Ts_end, new_path_steps))
+                trial_Ps = collect(LinRange(new_Ps_start, new_Ps_end, new_path_steps))
+                print("Uncertainty calculation lead to numerical instabilty, re-trying at finer step size.")
+            else
+                break
+            end
+        end
+
+        
         mean_ξ = mean(objectives_dist[1])
         std_ξ = std(objectives_dist[1])
         mean_α = mean(objectives_dist[2])

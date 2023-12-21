@@ -100,6 +100,95 @@ Results_dict = IntrinsicDACCycle.Optimize_Intrinsic_Refresh(Base_directory, name
 # ╔═╡ aa5da8a4-ee18-435c-a5b4-57c278907511
 Results_dict_2 = IntrinsicDACCycle.Optimize_Intrinsic_Refresh_w_err(Base_directory, name, α)
 
+# ╔═╡ eea6ce55-be0c-4ec8-ba26-ac2b4b88e892
+begin
+	bad_Ts = Results_dict_2["Refresh_Path"]["Temperatures"][2]
+	@show minimum(bad_Ts)
+	@show maximum(bad_Ts)
+	@show bad_Ts[2] - bad_Ts[1]
+end
+
+# ╔═╡ d9e1a849-760c-4475-b6b8-8424c9a98886
+begin
+	bad_Ps = Results_dict_2["Refresh_Path"]["Pressures"][2]
+	@show minimum(bad_Ps)
+	@show maximum(bad_Ps)
+	@show bad_Ps[2] - bad_Ps[1]
+end
+
+# ╔═╡ 611f8fdd-bda1-4736-a22b-f0bcf7374e3e
+test_objectives_dist = IntrinsicDACCycle.Intrinisic_refresh_objectives_posterior_dist(Base_directory, name, bad_Ts, bad_Ps, α, 100)
+
+# ╔═╡ 07ef6592-6837-44c6-aff1-067d66d4d55e
+any(isnan.(test_objectives_dist[1]))
+
+# ╔═╡ eabc4d4a-b491-4851-9068-82f995c25e68
+begin
+	new_Ts_start = bad_Ts[1]
+	new_Ts_end = bad_Ts[end]
+	new_dTs = (bad_Ts[2] - bad_Ts[1])*0.75*0.75
+
+	new_Ps_start = bad_Ps[1]
+	new_Ps_end = bad_Ps[end]
+	new_dPs = (bad_Ps[2] - bad_Ps[1])*0.75*0.75
+	
+	
+	new_path_T_steps = length(new_Ts_start:new_dTs:new_Ts_end)
+	new_path_P_steps = length(new_Ps_start:new_dPs:new_Ps_end)
+
+	path_steps = maximum([new_path_T_steps, new_path_P_steps])
+
+	path_Ts = collect(LinRange(new_Ts_start, new_Ts_end, path_steps))
+	path_Ps = collect(LinRange(new_Ps_start, new_Ps_end, path_steps))
+
+	new_objectives_dist = IntrinsicDACCycle.Intrinisic_refresh_objectives_posterior_dist(Base_directory, name, path_Ts, path_Ps, α, 100)
+end
+
+# ╔═╡ 39a1954a-e54d-4da9-b0e1-dac6f7a8fa8f
+any(isnan.(new_objectives_dist[1]))
+
+# ╔═╡ 3fd0ead8-9e56-407b-8936-2e15d735f4d6
+path_Ts
+
+# ╔═╡ 6ba6e65e-0acb-458a-883f-d6b7087aa2df
+bad_Ts
+
+# ╔═╡ 9b02a62b-eb0c-4ede-a820-0e26ecad2fb7
+begin
+	thingamabob = nothing 
+	for i in 1:10
+		if i > 5
+			break	
+		end
+		thingamabob = i
+
+	end
+	thingamabob
+end
+
+# ╔═╡ 55855fb5-09c8-4220-baf6-a1c5b151c0c2
+thingamabob
+
+# ╔═╡ 17735aac-ce65-459f-bfb3-0478b4348c6b
+~any(isnan.(bad_Ts)) & true
+
+# ╔═╡ bcc4b551-2810-4513-bfc8-778ca003a2a6
+for i in 1:10
+	@show (10 - 5)*0.75^i
+end
+
+# ╔═╡ 7c22bf89-1ba0-4257-8c63-0c3dd574364c
+
+
+# ╔═╡ 0cba25e4-7f5d-4317-9238-0a7dcec92d13
+
+
+# ╔═╡ 1cba972d-3a55-42af-955b-484957d3b8ad
+
+
+# ╔═╡ 346220e5-078b-45a6-a784-2917fb444020
+
+
 # ╔═╡ 99ebe87f-cf56-4647-b489-f9f2416adc23
 plot(Results_dict["Refresh_Path"]["Temperatures"], Results_dict["Refresh_Path"]["Pressures"])
 
@@ -265,6 +354,22 @@ scatter(Ds_pairwise[:,2], Ds_pairwise[:,1],
 # ╠═34ddcf3d-5f69-4fd1-93db-882c5c209c30
 # ╠═0ede4183-46d2-47ea-9a66-29191cea7549
 # ╠═aa5da8a4-ee18-435c-a5b4-57c278907511
+# ╠═eea6ce55-be0c-4ec8-ba26-ac2b4b88e892
+# ╠═d9e1a849-760c-4475-b6b8-8424c9a98886
+# ╠═611f8fdd-bda1-4736-a22b-f0bcf7374e3e
+# ╠═07ef6592-6837-44c6-aff1-067d66d4d55e
+# ╠═eabc4d4a-b491-4851-9068-82f995c25e68
+# ╠═39a1954a-e54d-4da9-b0e1-dac6f7a8fa8f
+# ╠═3fd0ead8-9e56-407b-8936-2e15d735f4d6
+# ╠═6ba6e65e-0acb-458a-883f-d6b7087aa2df
+# ╠═9b02a62b-eb0c-4ede-a820-0e26ecad2fb7
+# ╠═55855fb5-09c8-4220-baf6-a1c5b151c0c2
+# ╠═17735aac-ce65-459f-bfb3-0478b4348c6b
+# ╠═bcc4b551-2810-4513-bfc8-778ca003a2a6
+# ╠═7c22bf89-1ba0-4257-8c63-0c3dd574364c
+# ╠═0cba25e4-7f5d-4317-9238-0a7dcec92d13
+# ╠═1cba972d-3a55-42af-955b-484957d3b8ad
+# ╠═346220e5-078b-45a6-a784-2917fb444020
 # ╠═99ebe87f-cf56-4647-b489-f9f2416adc23
 # ╠═980e56de-6d31-4fa7-856a-71e85f52a3d9
 # ╠═92513c81-1076-4443-a651-858cde1485a5

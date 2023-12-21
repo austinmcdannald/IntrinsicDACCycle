@@ -547,7 +547,18 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
 
 
         #Generate Equilibrium loadings along the path
-        n_CO2, n_N2, d_CO2, d_N2, αs = Analytical_Henry_Generate_sorption_path(βs, Ps, α, Henry_CO2, Henry_N2) #[mmol/kg]
+        """Occasionally after sampling the material prameters, the path step size will be too coarse 
+        and the Analytical_Henry_Generate_sorption_path will try to take the square root of a negative number.
+            When that happens, we will return NaNs. This will be a flag to re-evalutate at finer step sizes. 
+        """
+        n_CO2, n_N2, d_CO2, d_N2, αs = try
+            Analytical_Henry_Generate_sorption_path(βs, Ps, α, Henry_CO2, Henry_N2) #[mmol/kg]
+        catch error_message
+            if isa(error_message, DomainError)
+                print("DomainError: sqrt of negative number. Try finer step size in Ts and Ps")
+                βs .* NaN, βs .* NaN, βs .* NaN, βs .* NaN, βs .* NaN
+            end
+        end 
         n_CO2 *= 10^-3 #convert to [mol/kg]
         n_N2 *= 10^-3 #convert to [mol/kg]
         d_CO2 *= 10^-3 #convert to [mol/kg]
