@@ -58,7 +58,7 @@ end
 # ╔═╡ e470bad6-e3d1-4ccf-a1ef-1a5b043f6955
 begin
 	#get list of completed intrinsic annalysis
-	list_of_intrinsic_mat_files = filter(x -> occursin.("json", x), readdir(Base_directory*"/Opt_Intrinsic_cycle/"))
+	list_of_intrinsic_mat_files = filter(x -> occursin.("json", x), readdir(Base_directory*"/Opt_Intrinsic_cycle_high_res/"))
 	#strip off the prefix
 	list_of_intrinsic_mats = replace.(list_of_intrinsic_mat_files, "Opt_Intrinsic_cyle_" => "")
 	#strip off the suffix 
@@ -71,7 +71,7 @@ begin
 	for name in list_of_materials
 		try
 			#Try to load the file name
-			material_string = Base_directory*"/Opt_Intrinsic_cycle/"*"Opt_Intrinsic_cyle_"*name
+			material_string = Base_directory*"/Opt_Intrinsic_cycle_high_res/"*"Opt_Intrinsic_cyle_"*name
 			thing = JSON.parsefile(material_string)
 			
 		catch
@@ -80,7 +80,7 @@ begin
 
 			try
 				Results_Dict = IntrinsicDACCycle.Optimize_Intrinsic_Refresh(Base_directory, name, α)
-				results_file = Base_directory*"/Opt_Intrinsic_cycle/Opt_Intrinsic_cyle_"*name*".json"
+				results_file = Base_directory*"/Opt_Intrinsic_cycle_high_res/Opt_Intrinsic_cyle_"*name*".json"
 	    		open(results_file, "w") do f
 	        		JSON.print(f, Results_Dict, 4)
 	    		end
@@ -114,10 +114,10 @@ begin
 	efficiencies = []
 	purities = []
 	#Get the completed intrinsic files 
-	intrinsic_analysis_files = filter(x -> occursin.("json", x), readdir(Base_directory*"/Opt_Intrinsic_cycle/"))
+	intrinsic_analysis_files = filter(x -> occursin.("json", x), readdir(Base_directory*"/Opt_Intrinsic_cycle_high_res/"))
 	for file in intrinsic_analysis_files
 		#read those jsons
-	    material_string = Base_directory*"/Opt_Intrinsic_cycle/"*file
+	    material_string = Base_directory*"/Opt_Intrinsic_cycle_high_res/"*file
 		material = JSON.parsefile(material_string)
 		material_efficiency = material["Intrinsic_capture_efficiency"]
 		material_capture = material["Purity_captured_CO2"]
