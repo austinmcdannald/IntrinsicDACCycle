@@ -523,13 +523,31 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
     and poplulate the posterior distributions of the performance objectives.
     """
 
-    Henry_CO2_dist = rand(MvNormal(vec(Henry_CO2_mean), vec(Henry_CO2_err)), samples)
-    Henry_N2_dist = rand(MvNormal(vec(Henry_N2_mean), vec(Henry_N2_err)), samples)
+    """Sample from a standard normal, then scale each parameter accordingly.
+    This keeps small steps in T from causeing large steps in the parameters. 
+    The whole trend of the parameter is sampled at once. """
+    factor1 = reshape(rand(Normal(0,1), samples), 1, :)
+	Henry_CO2_dist = reshape(Henry_CO2_mean, :, 1) .+ reshape(Henry_CO2_err, :, 1) * factor1
 
-    q_CO2_dist = rand(MvNormal(vec(q_CO2_mean), vec(q_CO2_err)), samples)
-    q_N2_dist = rand(MvNormal(vec(q_N2_mean), vec(q_N2_err)), samples)
+    factor2 = reshape(rand(Normal(0,1), samples), 1, :)
+    Henry_N2_dist = reshape(Henry_N2_mean, :, 1) .+ reshape(Henry_N2_err, :, 1) * factor2
 
-    cv_s_dist = rand(MvNormal(vec(cv_s_mean), vec(cv_s_err)), samples)
+    factor3 = reshape(rand(Normal(0,1), samples), 1, :)
+    q_CO2_dist = reshape(q_CO2_mean, :, 1) .+ reshape(q_CO2_err, :, 1) * factor3
+
+    factor4 = reshape(rand(Normal(0,1), samples), 1, :)
+    q_N2_dist = reshape(q_N2_mean, :, 1) .+ reshape(q_N2_err, :, 1) * factor4
+    
+    factor5 = reshape(rand(Normal(0,1), samples), 1, :)
+    cv_s_dist = reshape(cv_s_mean, :, 1) .+ reshape(cv_s_err, :, 1) * factor5
+
+    # Henry_CO2_dist = rand(MvNormal(vec(Henry_CO2_mean), vec(Henry_CO2_err)), samples)
+    # Henry_N2_dist = rand(MvNormal(vec(Henry_N2_mean), vec(Henry_N2_err)), samples)
+
+    # q_CO2_dist = rand(MvNormal(vec(q_CO2_mean), vec(q_CO2_err)), samples)
+    # q_N2_dist = rand(MvNormal(vec(q_N2_mean), vec(q_N2_err)), samples)
+
+    # cv_s_dist = rand(MvNormal(vec(cv_s_mean), vec(cv_s_err)), samples)
 
     capture_e_dist = []
     purity_dist = []
