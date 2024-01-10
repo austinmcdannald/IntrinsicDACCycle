@@ -33,8 +33,8 @@ Base_directory = "/users/asm6/DAC_data"
 # ╔═╡ 1b6265e2-5db1-4c7a-82a6-bd534bcb4979
 begin
 	# name = "ABEXIQ_clean"
-	# name = "EVUMUE_clean"
-	name = "HABRAF_manual"
+	name = "EVUMUE_clean"
+	# name = "HABRAF_manual"
 end
 
 # ╔═╡ 721a7285-6ee4-4027-9ec7-b1f0c9736af4
@@ -199,7 +199,7 @@ begin
 	x2 = (-1 .* B .- sqrt.(B.^2 .- 4 .* A .* C))./(2 .* A)
 
 	plot(Ts, x1)
-	#plot(Ts, x2)
+	# plot(Ts, x2)
 end
 
 # ╔═╡ 4a6c74d4-df70-4a47-acba-90d4f0f037df
