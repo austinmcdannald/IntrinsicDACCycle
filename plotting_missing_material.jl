@@ -164,13 +164,79 @@ let
 end
 
 # ╔═╡ b1b6894b-19cb-4d67-87ff-24485bafc274
-
+# begin
+# 	mono_Henry_CO2 = []
+# 	for (i,K) in enumerate(Henry_CO2)
+		
+# 		test = K > Henry_CO2[i+1]
+# 		append!(mono_Henry_CO2, test*Henry_CO2)
+# 	end
+		
+# end
 
 # ╔═╡ ee052937-90a5-45b2-92a9-6bc1c9cee77e
+# begin 
+# 	mono_Henry_CO2 = [Henry_CO2[1]]
+# 	shifted = circshift(Henry_CO2, 1)
+# 	for (i, K) in enumerate(Henry_CO2)
+# 		test = K <= shifted[i]
+# 		append!(mono_Henry_CO2, test*K)
+# 	end
+# end
+		
 
+# ╔═╡ 1eaf26a2-6b94-4ca2-bb4f-66a0dfac6e2f
+begin
+	shifted = circshift(Henry_CO2, 1)
+	shifted = shifted[2:end]
+	test_Henry_CO2 = Henry_CO2[2:end] .<= shifted
+	test_Henry_CO2 = append!([true], test_Henry_CO2)
+
+	mono_Henry_CO2 = Henry_CO2[test_Henry_CO2]
+end
 
 # ╔═╡ 0a7aeef9-e6f2-49fb-8ae3-cee0747c289d
+begin
+	@show length(mono_Henry_CO2)
+	@show length(Henry_CO2)
+end
 
+# ╔═╡ 317cb623-cc11-4d02-86a2-f02d72fbdf95
+cumsum(test_Henry_CO2[test_Henry_CO2 .== true])
+
+# ╔═╡ d4092b50-6492-481a-a979-25a164c7e1a1
+begin
+	function keep_monotonic_decreasing(x)
+		"""Function to keep only the monotonically decreasing part of an array"""
+		
+		#Create array that has all but the last entry
+		truncated = x[1:end-1]
+
+		#Test if the array entries after the first are smaller than the previous entry
+		truth_test = x[2:end] .<= truncated
+		#Append a "true" for the first entry of the array
+		truth_test = append!([true], truth_test)
+		
+		#keep only the parts of the array that are monotonic
+		mono_x = x[truth_test]
+
+		#Calculate the indices of the array that are monotonic
+		indices = cumsum(truth_test[truth_test .== true])
+		return mono_x, indices
+	end
+end
+
+		
+	
+
+# ╔═╡ 3da7584d-8f11-4259-a42b-5f0c1af07ec9
+begin
+	A, B = keep_monotonic_decreasing(Henry_CO2)
+	A == mono_Henry_CO2
+end
+
+# ╔═╡ 18e40c5a-369e-4475-864d-3fe7b856f13a
+shifted == Henry_CO2[1:end-1]
 
 # ╔═╡ bf00888f-8579-4f47-bd0d-7eec050f2b4a
 begin
@@ -210,5 +276,10 @@ end
 # ╠═6db754f3-3dbd-4371-8473-63497e6aa363
 # ╠═b1b6894b-19cb-4d67-87ff-24485bafc274
 # ╠═ee052937-90a5-45b2-92a9-6bc1c9cee77e
+# ╠═1eaf26a2-6b94-4ca2-bb4f-66a0dfac6e2f
 # ╠═0a7aeef9-e6f2-49fb-8ae3-cee0747c289d
+# ╠═317cb623-cc11-4d02-86a2-f02d72fbdf95
+# ╠═d4092b50-6492-481a-a979-25a164c7e1a1
+# ╠═3da7584d-8f11-4259-a42b-5f0c1af07ec9
+# ╠═18e40c5a-369e-4475-864d-3fe7b856f13a
 # ╠═bf00888f-8579-4f47-bd0d-7eec050f2b4a
