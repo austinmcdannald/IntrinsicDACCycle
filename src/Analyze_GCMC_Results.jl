@@ -218,3 +218,22 @@ function Close_enough(material, Kh_results, MC_results)
     tests = any([test1, test2, test3])
     return tests 
 end
+
+function keep_monotonic_decreasing(x)
+    """Function to keep only the monotonically decreasing part of an array"""
+    
+    #Create array that has all but the last entry
+    truncated = x[1:end-1]
+
+    #Test if the array entries after the first are smaller than the previous entry
+    truth_test = x[2:end] .<= truncated
+    #Append a "true" for the first entry of the array
+    truth_test = append!([true], truth_test)
+    
+    #keep only the parts of the array that are monotonic
+    mono_x = x[truth_test]
+
+    #Calculate the indices of the array that are monotonic
+    indices = cumsum(truth_test[truth_test .== true])
+    return mono_x, indices
+end

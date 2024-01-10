@@ -46,19 +46,40 @@ function Intrinisic_refresh(directory, name)
         βs = βs .* NaN
     end
 
-    Path_Dict["Temperatures"] = Ts
-    Path_Dict["Temperature_units"] = "K"
-    Path_Dict["Pressures"] = Ps
-    Path_Dict["Pressure_units"] = "Pa"
-    Path_Dict["Betas"] = βs
-    Path_Dict["Beta_units"] = "mol/kJ"
-
     #Extrapolate Henry constants along the path
     #Extrapolate the CO2 isotherm to the βs
     Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO₂, material) #[mmol/(kg Pa)]
 
     #Extrapolate the N2 isotherm to the βs
     Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N₂, material)  #[mmol/(kg Pa)]
+
+    #If extrapolating outside a reasonable range (for that material),
+    # the Henry Constants will un-physically increase with increasing temperature
+    #Keep only the monotonically decreasing parts of the Henry constants
+    mono_Henry_CO2, CO2_indices = keep_monotonic_decreasing(Henry_CO2)
+    mono_Henry_N2, N2_indices = keep_monotonic_decreasing(Henry_N2)
+    #Choose whichever set of indices is smaller
+    index_lenghts = [length(CO2_indices), length(N2_indices)]
+	choice_of_indices = [CO2_indices, N2_indices]
+	indices = choice_of_indices[argmin(index_lenghts)]
+
+    #Apply the index truncation to all relevant variables
+    Henry_CO2 = Henry_CO2[indices]
+    Henry_CO2_err = Henry_CO2_err[indices]
+
+    Henry_N2 = Henry_N2[indices]
+    Henry_N2_err = Henry_N2_err[indices]
+
+    Ts = Ts[indices]
+    Ps = Ps[indices]
+    βs = βs[indices]
+
+    Path_Dict["Temperatures"] = Ts
+    Path_Dict["Temperature_units"] = "K"
+    Path_Dict["Pressures"] = Ps
+    Path_Dict["Pressure_units"] = "Pa"
+    Path_Dict["Betas"] = βs
+    Path_Dict["Beta_units"] = "mol/kJ"
 
     Path_Dict["Henry_CO2"] = Henry_CO2
     Path_Dict["Henry_CO2_err"] = Henry_CO2_err
@@ -229,19 +250,40 @@ function Intrinisic_refresh_path(directory::String, name::String,
         βs = βs .* NaN
     end
 
-    Path_Dict["Temperatures"] = Ts
-    Path_Dict["Temperature_units"] = "K"
-    Path_Dict["Pressures"] = Ps
-    Path_Dict["Pressure_units"] = "Pa"
-    Path_Dict["Betas"] = βs
-    Path_Dict["Beta_units"] = "mol/kJ"
-
     #Extrapolate Henry constants along the path
     #Extrapolate the CO2 isotherm to the βs
     Henry_CO2, Henry_CO2_err = Kh_extrapolate(βs, Kh_CO₂, material) #[mmol/(kg Pa)]
 
     #Extrapolate the N2 isotherm to the βs
     Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N₂, material)  #[mmol/(kg Pa)]
+
+    #If extrapolating outside a reasonable range (for that material),
+    # the Henry Constants will un-physically increase with increasing temperature
+    #Keep only the monotonically decreasing parts of the Henry constants
+    mono_Henry_CO2, CO2_indices = keep_monotonic_decreasing(Henry_CO2)
+    mono_Henry_N2, N2_indices = keep_monotonic_decreasing(Henry_N2)
+    #Choose whichever set of indices is smaller
+    index_lenghts = [length(CO2_indices), length(N2_indices)]
+	choice_of_indices = [CO2_indices, N2_indices]
+	indices = choice_of_indices[argmin(index_lenghts)]
+
+    #Apply the index truncation to all relevant variables
+    Henry_CO2 = Henry_CO2[indices]
+    Henry_CO2_err = Henry_CO2_err[indices]
+
+    Henry_N2 = Henry_N2[indices]
+    Henry_N2_err = Henry_N2_err[indices]
+
+    Ts = Ts[indices]
+    Ps = Ps[indices]
+    βs = βs[indices]
+
+    Path_Dict["Temperatures"] = Ts
+    Path_Dict["Temperature_units"] = "K"
+    Path_Dict["Pressures"] = Ps
+    Path_Dict["Pressure_units"] = "Pa"
+    Path_Dict["Betas"] = βs
+    Path_Dict["Beta_units"] = "mol/kJ"
 
     Path_Dict["Henry_CO2"] = Henry_CO2
     Path_Dict["Henry_CO2_err"] = Henry_CO2_err
@@ -403,6 +445,28 @@ function Intrinisic_refresh_objectives(directory::String, name::String,
     #Extrapolate the N2 isotherm to the βs
     Henry_N2, Henry_N2_err = Kh_extrapolate(βs, Kh_N₂, material)  #[mmol/(kg Pa)]
 
+    #If extrapolating outside a reasonable range (for that material),
+    # the Henry Constants will un-physically increase with increasing temperature
+    #Keep only the monotonically decreasing parts of the Henry constants
+    mono_Henry_CO2, CO2_indices = keep_monotonic_decreasing(Henry_CO2)
+    mono_Henry_N2, N2_indices = keep_monotonic_decreasing(Henry_N2)
+    #Choose whichever set of indices is smaller
+    index_lenghts = [length(CO2_indices), length(N2_indices)]
+	choice_of_indices = [CO2_indices, N2_indices]
+	indices = choice_of_indices[argmin(index_lenghts)]
+
+    #Apply the index truncation to all relevant variables
+    Henry_CO2 = Henry_CO2[indices]
+    Henry_CO2_err = Henry_CO2_err[indices]
+
+    Henry_N2 = Henry_N2[indices]
+    Henry_N2_err = Henry_N2_err[indices]
+
+    Ts = Ts[indices]
+    Ps = Ps[indices]
+    βs = βs[indices]
+
+
     #Generate Equilibrium loadings along the path
     n_CO2, n_N2, d_CO2, d_N2, αs = Analytical_Henry_Generate_sorption_path(βs, Ps, α, Henry_CO2, Henry_N2) #[mmol/kg]
     n_CO2 *= 10^-3 #convert to [mol/kg]
@@ -504,6 +568,27 @@ function Intrinisic_refresh_objectives_posterior_dist(directory::String, name::S
 
     #Extrapolate the N2 isotherm to the βs
     Henry_N2_mean, Henry_N2_err = Kh_extrapolate(βs, Kh_N₂, material)  #[mmol/(kg Pa)]
+
+    #If extrapolating outside a reasonable range (for that material),
+    # the Henry Constants will un-physically increase with increasing temperature
+    #Keep only the monotonically decreasing parts of the Henry constants
+    mono_Henry_CO2, CO2_indices = keep_monotonic_decreasing(Henry_CO2)
+    mono_Henry_N2, N2_indices = keep_monotonic_decreasing(Henry_N2)
+    #Choose whichever set of indices is smaller
+    index_lenghts = [length(CO2_indices), length(N2_indices)]
+	choice_of_indices = [CO2_indices, N2_indices]
+	indices = choice_of_indices[argmin(index_lenghts)]
+
+    #Apply the index truncation to all relevant variables
+    Henry_CO2 = Henry_CO2[indices]
+    Henry_CO2_err = Henry_CO2_err[indices]
+
+    Henry_N2 = Henry_N2[indices]
+    Henry_N2_err = Henry_N2_err[indices]
+
+    Ts = Ts[indices]
+    Ps = Ps[indices]
+    βs = βs[indices]
 
     #Generate heat of adsorption along the path
     q_CO2_mean, q_CO2_err = qₐ∞(βs, Kh_CO₂) #kJ/mol of gas
