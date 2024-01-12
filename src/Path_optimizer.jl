@@ -169,10 +169,10 @@ function Optimize_Intrinsic_Refresh(Base_directory::String, name::String,
     Path_Dict["Betas"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Beta_units"] = "mol/kJ"
 
-	Path_Dict["Henry_CO2"] = Vector{Matrix}(undef,num_solutions)
-    Path_Dict["Henry_CO2_err"] = Vector{Matrix}(undef,num_solutions)
-    Path_Dict["Henry_N2"] = Vector{Matrix}(undef,num_solutions)
-    Path_Dict["Henry_N2_err"] = Vector{Matrix}(undef,num_solutions)
+	Path_Dict["Henry_CO2"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_CO2_err"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_N2"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_N2_err"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Henry_units"] = "mmol/(kg Pa)"
 
     Path_Dict["Moles_CO2"] = Vector{Vector}(undef,num_solutions)
@@ -404,10 +404,10 @@ function Optimize_Intrinsic_Refresh_w_err(Base_directory::String, name::String,
     Path_Dict["Betas"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Beta_units"] = "mol/kJ"
 
-	Path_Dict["Henry_CO2"] = Vector{Matrix}(undef,num_solutions)
-    Path_Dict["Henry_CO2_err"] = Vector{Matrix}(undef,num_solutions)
-    Path_Dict["Henry_N2"] = Vector{Matrix}(undef,num_solutions)
-    Path_Dict["Henry_N2_err"] = Vector{Matrix}(undef,num_solutions)
+	Path_Dict["Henry_CO2"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_CO2_err"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_N2"] = Vector{Vector}(undef,num_solutions)
+    Path_Dict["Henry_N2_err"] = Vector{Vector}(undef,num_solutions)
     Path_Dict["Henry_units"] = "mmol/(kg Pa)"
 
     Path_Dict["Moles_CO2"] = Vector{Vector}(undef,num_solutions)
